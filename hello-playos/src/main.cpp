@@ -12,16 +12,15 @@
 #include "playos/playos.h"
 
 int main() {
-    // Fixed window for the sample — the shell is already fullscreen, and on
-    // a runtime device the compositor fullscreens every client surface.
-    const int width = 960;
-    const int height = 540;
-
-    InitWindow(width, height, "Hello PlayOS");
+    // Fullscreen at native resolution — the same pattern as the shell.
+    SetConfigFlags(FLAG_FULLSCREEN_MODE);
+    InitWindow(0, 0, "Hello PlayOS");
     SetTargetFPS(60);
 
     PlayOS::Lifecycle::Init();
 
+    const int width = GetScreenWidth();
+    const int height = GetScreenHeight();
     Vector2 pos = {width / 2.0f, height / 2.0f};
     Vector2 vel = {220.0f, 160.0f};
     const float radius = 40.0f;
