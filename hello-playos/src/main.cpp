@@ -12,8 +12,10 @@
 #include "playos/playos.h"
 
 int main() {
-    const int width = 960;
-    const int height = 540;
+    // Console experience: fullscreen at the monitor's native resolution.
+    SetConfigFlags(FLAG_FULLSCREEN_MODE);
+    const int width = GetMonitorWidth(0);
+    const int height = GetMonitorHeight(0);
 
     InitWindow(width, height, "Hello PlayOS");
     SetTargetFPS(60);
