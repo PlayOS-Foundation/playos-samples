@@ -25,7 +25,7 @@ playos_add_dependency(playos-platform-api)
 
 FetchContent_Declare(raylib
     GIT_REPOSITORY https://github.com/raysan5/raylib.git
-    GIT_TAG 5.5)
+    GIT_TAG 6.0)
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
 
@@ -42,4 +42,9 @@ FetchContent_MakeAvailable(raylib)
 # intended developer experience: Raylib for rendering + the PlayOS Platform API
 # for platform services (input, lifecycle).
 add_executable(hello-playos hello-playos/src/main.cpp)
-target_link_libraries(hello-playos PRIVATE PlayOS::PlatformAPI raylib)
+target_link_libraries(hello-playos PRIVATE
+    PlayOS::PlatformAPI
+    PlayOS::playos-input-raylib
+    PlayOS::playos-display-raylib
+    PlayOS::playos-storage-platform
+    raylib)

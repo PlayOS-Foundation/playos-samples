@@ -13,17 +13,18 @@
 
 int main() {
     // Fullscreen on Linux, windowed on Windows for convenient development.
+    auto displayInfo = PlayOS::Display::Current();
 #ifdef __linux__
     SetConfigFlags(FLAG_FULLSCREEN_MODE);
     InitWindow(0, 0, "Hello PlayOS");
     const int width = GetScreenWidth();
     const int height = GetScreenHeight();
 #else
-    const int width = 960;
-    const int height = 540;
+    const int width = displayInfo.width > 0 ? displayInfo.width : 960;
+    const int height = displayInfo.height > 0 ? displayInfo.height : 540;
     InitWindow(width, height, "Hello PlayOS");
 #endif
-    SetTargetFPS(60);
+    SetTargetFPS(displayInfo.refreshRate > 0 ? displayInfo.refreshRate : 60);
     Vector2 pos = {width / 2.0f, height / 2.0f};
     Vector2 vel = {220.0f, 160.0f};
     const float radius = 40.0f;
