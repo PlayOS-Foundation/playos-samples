@@ -1,0 +1,21 @@
+# ninja log v5
+24	48	1783445733185223300	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-mkdir	4519fa229d68a117
+24	48	1783445733185223300	/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-mkdir	4519fa229d68a117
+50	1109607	1783446842732822000	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-download	d01df09415d57681
+50	1109607	1783446842732822000	/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-download	d01df09415d57681
+1109615	1109730	0	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-update	8c90ce3be43b4839
+1109615	1109730	0	/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-update	8c90ce3be43b4839
+1109732	1109746	1783446842870700100	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-patch	6be17cfa7b8e13a2
+1109732	1109746	1783446842870700100	/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-patch	6be17cfa7b8e13a2
+1109749	1109766	1783446842886700100	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-configure	83d8d2086a49740e
+1109749	1109766	1783446842886700100	/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-configure	83d8d2086a49740e
+1109768	1109782	1783446842905060100	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-build	a15f33eefeed3780
+1109768	1109782	1783446842905060100	/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-build	a15f33eefeed3780
+1109783	1109795	1783446842920693400	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-install	8e2dc068464cd9e5
+1109783	1109795	1783446842920693400	/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-install	8e2dc068464cd9e5
+1109797	1109808	1783446842932749500	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-test	dca230cc699dc5a
+1109797	1109808	1783446842932749500	/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-test	dca230cc699dc5a
+1109810	1109827	1783446842952855400	CMakeFiles/raylib-populate-complete	f87e3a6c9cda229b
+1109810	1109827	1783446842952855400	raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-done	f87e3a6c9cda229b
+1109810	1109827	1783446842952855400	/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/CMakeFiles/raylib-populate-complete	f87e3a6c9cda229b
+1109810	1109827	1783446842952855400	/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-done	f87e3a6c9cda229b

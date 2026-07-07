@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/CMakeFiles/raylib-populate"
+		},
+		{
+			"file" : "/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/CMakeFiles/raylib-populate.rule"
+		},
+		{
+			"file" : "/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/CMakeFiles/raylib-populate-complete.rule"
+		},
+		{
+			"file" : "/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-build.rule"
+		},
+		{
+			"file" : "/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-configure.rule"
+		},
+		{
+			"file" : "/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-download.rule"
+		},
+		{
+			"file" : "/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-install.rule"
+		},
+		{
+			"file" : "/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-mkdir.rule"
+		},
+		{
+			"file" : "/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-patch.rule"
+		},
+		{
+			"file" : "/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-test.rule"
+		},
+		{
+			"file" : "/mnt/c/Users/nmesaritis/source/repos/playos/playos-samples/build-wayland/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/raylib-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"raylib-populate"
+		],
+		"name" : "raylib-populate"
+	}
+}

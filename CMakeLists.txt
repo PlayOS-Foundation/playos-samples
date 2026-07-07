@@ -28,6 +28,14 @@ FetchContent_Declare(raylib
     GIT_TAG 5.5)
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
+
+# Optional Wayland build for samples on Linux (see playos-shell for details).
+option(PLAYOS_SHELL_WAYLAND "Build samples for Wayland (Linux)" OFF)
+if(PLAYOS_SHELL_WAYLAND AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(GLFW_BUILD_WAYLAND ON CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_X11 OFF CACHE BOOL "" FORCE)
+endif()
+
 FetchContent_MakeAvailable(raylib)
 
 # hello-playos: the reference "your first PlayOS app" sample. Demonstrates the
