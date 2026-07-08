@@ -21,8 +21,8 @@ function(playos_add_dependency name)
     endif()
 endfunction()
 
-playos_add_dependency(playos-platform-api)
-
+# Raylib must be fetched BEFORE playos-platform-api so the platform-api's
+# CMakeLists.txt can see the raylib target and build its raylib backends.
 FetchContent_Declare(raylib
     GIT_REPOSITORY https://github.com/raysan5/raylib.git
     GIT_TAG 6.0)
@@ -37,6 +37,8 @@ if(PLAYOS_SHELL_WAYLAND AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 FetchContent_MakeAvailable(raylib)
+
+playos_add_dependency(playos-platform-api)
 
 # hello-playos: the reference "your first PlayOS app" sample. Demonstrates the
 # intended developer experience: Raylib for rendering + the PlayOS Platform API
