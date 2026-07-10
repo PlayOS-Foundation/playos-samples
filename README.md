@@ -8,6 +8,7 @@ best practices for developing with the **PlayOS Platform API**.
 | Sample | Description |
 |---|---|
 | `hello-playos` | The reference "your first PlayOS app": Raylib for rendering + the PlayOS Platform API for input and lifecycle. Press **B** / **Esc** to exit. |
+| `space-invaders` | Classic arcade shooter: defend Earth from rows of aliens. Arrow keys to move, Space to shoot, Esc to quit. |
 
 ## Building
 
