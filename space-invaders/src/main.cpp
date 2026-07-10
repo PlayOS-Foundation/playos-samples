@@ -8,10 +8,12 @@
 #include "raylib.h"
 #include "playos/playos.h"
 
+#include <algorithm>
 #include <vector>
 #include <cmath>
 
-// ── constants ────────────────────────────────────────────────────────────
+// ── helpers ────────────────────────────────────────────────────────────
+static float Clamp(float v, float lo, float hi) { return v < lo ? lo : v > hi ? hi : v; }
 constexpr int kAlienCols = 10;
 constexpr int kAlienRows = 4;
 constexpr float kAlienW = 40;
@@ -167,9 +169,9 @@ int main() {
 
         // Player
         DrawTriangle(
-            {playerX, H - 80},
-            {playerX - kPlayerW/2, H - 50},
-            {playerX + kPlayerW/2, H - 50},
+            {playerX, (float)H - 80},
+            {playerX - kPlayerW/2, (float)H - 50},
+            {playerX + kPlayerW/2, (float)H - 50},
             Color{60, 180, 240, 255});
 
         // Bullets
