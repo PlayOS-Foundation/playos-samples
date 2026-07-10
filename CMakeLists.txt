@@ -58,3 +58,20 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 else()
     target_link_libraries(hello-playos PRIVATE PlayOS::playos-storage-null)
 endif()
+
+# space-invaders: quick arcade clone demonstrating input + rendering.
+add_executable(space-invaders space-invaders/src/main.cpp)
+target_link_libraries(space-invaders PRIVATE
+    PlayOS::PlatformAPI
+    PlayOS::playos-input-raylib
+    PlayOS::playos-display-raylib
+    PlayOS::playos-audio-raylib
+    PlayOS::playos-touch-raylib
+    raylib)
+if(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    target_link_libraries(space-invaders PRIVATE PlayOS::playos-storage-windows)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_libraries(space-invaders PRIVATE PlayOS::playos-storage-linux)
+else()
+    target_link_libraries(space-invaders PRIVATE PlayOS::playos-storage-null)
+endif()
