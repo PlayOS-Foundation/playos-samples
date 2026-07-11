@@ -47,10 +47,14 @@ add_executable(hello-playos hello-playos/src/main.cpp)
 target_link_libraries(hello-playos PRIVATE
     PlayOS::PlatformAPI
     PlayOS::playos-input-raylib
-    PlayOS::playos-display-raylib
     PlayOS::playos-audio-raylib
     PlayOS::playos-touch-raylib
     raylib)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_libraries(hello-playos PRIVATE PlayOS::playos-display-linux)
+else()
+    target_link_libraries(hello-playos PRIVATE PlayOS::playos-display-raylib)
+endif()
 if(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(hello-playos PRIVATE PlayOS::playos-storage-windows)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -69,10 +73,14 @@ add_executable(space-invaders space-invaders/src/main.cpp)
 target_link_libraries(space-invaders PRIVATE
     PlayOS::PlatformAPI
     PlayOS::playos-input-raylib
-    PlayOS::playos-display-raylib
     PlayOS::playos-audio-raylib
     PlayOS::playos-touch-raylib
     raylib)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_libraries(space-invaders PRIVATE PlayOS::playos-display-linux)
+else()
+    target_link_libraries(space-invaders PRIVATE PlayOS::playos-display-raylib)
+endif()
 if(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(space-invaders PRIVATE PlayOS::playos-storage-windows)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
