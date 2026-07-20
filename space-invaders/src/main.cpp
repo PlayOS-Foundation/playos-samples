@@ -40,12 +40,13 @@ struct Bullet {
 };
 
 // ── helpers ──────────────────────────────────────────────────────────────
-static bool PressedLeft()  { return PlayOS::Input::Pressed(PlayOS::Button::DPadLeft)  || IsKeyPressed(KEY_LEFT); }
-static bool PressedRight() { return PlayOS::Input::Pressed(PlayOS::Button::DPadRight) || IsKeyPressed(KEY_RIGHT); }
-static bool PressedFire()  { return PlayOS::Input::Pressed(PlayOS::Button::A)          || IsKeyPressed(KEY_SPACE); }
-static bool PressedQuit()  { return PlayOS::Input::Pressed(PlayOS::Button::B)          || IsKeyPressed(KEY_ESCAPE); }
-static bool DownLeft()     { return PlayOS::Input::Down(PlayOS::Button::DPadLeft)      || IsKeyDown(KEY_LEFT); }
-static bool DownRight()    { return PlayOS::Input::Down(PlayOS::Button::DPadRight)     || IsKeyDown(KEY_RIGHT); }
+static float MoveAxis()     { return PlayOS::Input::GetAxis(PlayOS::Axis::LeftX); }
+static bool  PressedLeft()  { return PlayOS::Input::Pressed(PlayOS::Button::DPadLeft)  || IsKeyPressed(KEY_LEFT); }
+static bool  PressedRight() { return PlayOS::Input::Pressed(PlayOS::Button::DPadRight) || IsKeyPressed(KEY_RIGHT); }
+static bool  PressedFire()  { return PlayOS::Input::Pressed(PlayOS::Button::A)          || IsKeyPressed(KEY_SPACE); }
+static bool  PressedQuit()  { return PlayOS::Input::Pressed(PlayOS::Button::B)          || IsKeyPressed(KEY_ESCAPE); }
+static bool  DPadLeft()     { return PlayOS::Input::Down(PlayOS::Button::DPadLeft)      || IsKeyDown(KEY_LEFT); }
+static bool  DPadRight()    { return PlayOS::Input::Down(PlayOS::Button::DPadRight)     || IsKeyDown(KEY_RIGHT); }
 
 int main() {
     auto displayInfo = PlayOS::Display::Current();
@@ -89,8 +90,10 @@ int main() {
         PlayOS::Lifecycle::Update();
 
         // ── player ───────────────────────────────────────────────────────
-        if (DownLeft())  playerX -= kPlayerSpeed * dt;
-        if (DownRight()) playerX += kPlayerSpeed * dt;
+        float move = MoveAxis();
+        if (DPadLeft())  move = -1.0f;
+        if (DPadRight()) move =  1.0f;
+        playerX += move * kPlayerSpeed * dt;
         playerX = Clamp(playerX, kPlayerW / 2.0f, W - kPlayerW / 2.0f);
 
         shootCooldown -= dt;
