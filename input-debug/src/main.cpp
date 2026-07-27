@@ -166,7 +166,7 @@ int main() {
             0.15f, 10, Color{16, 18, 32, 255});
         DrawRectangleRoundedLines(
             {(float)kCtrlLeft, (float)kCtrlTop, (float)kCtrlW, (float)kCtrlH},
-            0.15f, 10, 1.5f, Color{50, 50, 80, 255});
+            0.15f, 10, Color{50, 50, 80, 255});
 
         // Controller body silhouette (simplified Xbox shape)
         DrawEllipse(cx, cy, 220, 140, Color{22, 26, 42, 255});
@@ -191,7 +191,7 @@ int main() {
             float bw = (bb.btn == PlayOS::Button::L2 || bb.btn == PlayOS::Button::R2) ? 60 : 70;
             float bh = (bb.btn == PlayOS::Button::L2 || bb.btn == PlayOS::Button::R2) ? 18 : 22;
             DrawRectangleRounded({bb.x - bw / 2, bb.y - bh / 2, bw, bh}, 0.4f, 6, fill);
-            DrawRectangleRoundedLines({bb.x - bw / 2, bb.y - bh / 2, bw, bh}, 0.4f, 6, 1.5f, border);
+            DrawRectangleRoundedLines({bb.x - bw / 2, bb.y - bh / 2, bw, bh}, 0.4f, 6, border);
             int tw = MeasureText(ButtonName(bb.btn), 14);
             DrawText(ButtonName(bb.btn), bb.x - tw / 2, bb.y - 7, 14,
                      held ? WHITE : Color{120, 120, 160, 255});
@@ -245,7 +245,7 @@ int main() {
             0.15f, 10, Color{16, 18, 32, 255});
         DrawRectangleRoundedLines(
             {(float)kLogLeft, (float)kCtrlTop, (float)kLogW, (float)kLogH},
-            0.15f, 10, 1.5f, Color{50, 50, 80, 255});
+            0.15f, 10, Color{50, 50, 80, 255});
 
         DrawText("EVENT LOG", kLogLeft + 16, kCtrlTop + 16, 26,
                  Color{120, 120, 160, 255});
