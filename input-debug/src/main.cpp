@@ -81,6 +81,12 @@ static const char* EvdevName(int code) {
     }
 }
 
+struct LogEntry {
+    std::string text;
+    float age = 0;  // seconds since logged
+    Color color;
+};
+
 #ifdef __linux__
 struct RawDev { int fd; std::string name; };
 static std::vector<RawDev> g_rawDevs;
@@ -137,12 +143,6 @@ static void ReadRawEvdev(std::deque<LogEntry>& log, int maxLog) {
     }
 }
 #endif
-
-struct LogEntry {
-    std::string text;
-    float age = 0;  // seconds since logged
-    Color color;
-};
 
 int main() {
     auto displayInfo = PlayOS::Display::Current();
