@@ -16,6 +16,16 @@
 #include <deque>
 #include <string>
 #include <cstdio>
+#include <vector>
+
+#ifdef __linux__
+#include <dirent.h>
+#include <fcntl.h>
+#include <linux/input.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+#include <cstring>
+#endif
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -44,6 +54,90 @@ static const char* ButtonName(PlayOS::Button b) {
     }
 }
 
+static const char* EvdevName(int code) {
+    switch (code) {
+        case 0x130: return "BTN_SOUTH(A)";
+        case 0x131: return "BTN_EAST(B)";
+        case 0x133: return "BTN_NORTH(Y)";
+        case 0x134: return "BTN_WEST(X)";
+        case 0x136: return "BTN_TL(L1)";
+        case 0x137: return "BTN_TR(R1)";
+        case 0x138: return "BTN_TL2(L2)";
+        case 0x139: return "BTN_TR2(R2)";
+        case 0x13a: return "BTN_SELECT";
+        case 0x13b: return "BTN_START";
+        case 0x13c: return "BTN_MODE";
+        case 0x220: return "BTN_DPAD_UP";
+        case 0x221: return "BTN_DPAD_DOWN";
+        case 0x222: return "BTN_DPAD_LEFT";
+        case 0x223: return "BTN_DPAD_RIGHT";
+        case 0x2c0: return "BTN_TRIGGER_HAPPY1(M1)";
+        case 0x2c1: return "BTN_TRIGGER_HAPPY2(M2)";
+        case 0x2c2: return "BTN_TRIGGER_HAPPY3";
+        case 0x2c3: return "BTN_TRIGGER_HAPPY4";
+        case 0x148: return "KEY_PROG1(Armoury)";
+        case 0x149: return "KEY_PROG2(CmdCntr)";
+        default: return nullptr;
+    }
+}
+
+#ifdef __linux__
+struct RawDev { int fd; std::string name; };
+static std::vector<RawDev> g_rawDevs;
+
+static void OpenRawDevices() {
+    DIR* dir = opendir("/dev/input");
+    if (!dir) return;
+    dirent* entry;
+    while ((entry = readdir(dir)) != nullptr) {
+        if (std::strncmp(entry->d_name, "event", 5) != 0) continue;
+        std::string path = std::string("/dev/input/") + entry->d_name;
+        int fd = open(path.c_str(), O_RDONLY | O_NONBLOCK);
+        if (fd < 0) continue;
+
+        // Get device name
+        char devname[256] = "?";
+        ioctl(fd, EVIOCGNAME(sizeof(devname)), devname);
+
+        // Check if it has any keys
+        unsigned long keybits[(KEY_MAX / (8 * sizeof(unsigned long))) + 1] = {0};
+        if (ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keybits)), keybits) < 0) {
+            close(fd);
+            continue;
+        }
+        bool hasKeys = false;
+        for (int i = 0; i < KEY_MAX; ++i) {
+            if ((keybits[i / (8 * sizeof(unsigned long))] >> (i % (8 * sizeof(unsigned long)))) & 1UL) {
+                hasKeys = true;
+                break;
+            }
+        }
+        if (!hasKeys) { close(fd); continue; }
+
+        g_rawDevs.push_back({fd, devname});
+    }
+    closedir(dir);
+}
+
+static void ReadRawEvdev(std::deque<LogEntry>& log, int maxLog) {
+    for (auto& dev : g_rawDevs) {
+        input_event ev;
+        ssize_t n;
+        while ((n = read(dev.fd, &ev, sizeof(ev))) == (ssize_t)sizeof(ev)) {
+            if (ev.type != EV_KEY || ev.value == 0) continue; // press-down only
+            char buf[256];
+            const char* name = EvdevName(ev.code);
+            if (name)
+                snprintf(buf, sizeof(buf), "RAW: %s  [%s]", name, dev.name.c_str());
+            else
+                snprintf(buf, sizeof(buf), "RAW: 0x%x (%d)  [%s]", ev.code, ev.code, dev.name.c_str());
+            log.push_back({buf, 0.0f, YELLOW});
+            if ((int)log.size() > maxLog) log.pop_front();
+        }
+    }
+}
+#endif
+
 struct LogEntry {
     std::string text;
     float age = 0;  // seconds since logged
@@ -64,6 +158,10 @@ int main() {
 #endif
     SetTargetFPS(displayInfo.refreshRate > 0 ? displayInfo.refreshRate : 60);
     PlayOS::Lifecycle::Init();
+
+#ifdef __linux__
+    OpenRawDevices();
+#endif
 
     std::deque<LogEntry> log;
     const int kMaxLog = 40;
@@ -141,16 +239,22 @@ int main() {
         float dt = GetFrameTime();
         PlayOS::Lifecycle::Update();
 
-        // Log any pressed buttons
+        // Log any pressed buttons (PlayOS mapped)
         for (int i = 0; i < static_cast<int>(PlayOS::Button::Count); ++i) {
             auto btn = static_cast<PlayOS::Button>(i);
             if (Pressed(btn)) {
                 char buf[128];
-                snprintf(buf, sizeof(buf), "PRESS: %s", ButtonName(btn));
+                snprintf(buf, sizeof(buf), "BTN: %s", ButtonName(btn));
                 log.push_back({buf, 0.0f, GREEN});
                 if ((int)log.size() > kMaxLog) log.pop_front();
             }
         }
+
+#ifdef __linux__
+        // Log raw evdev key events (unmapped buttons too)
+        ReadRawEvdev(log, kMaxLog);
+#endif
+
         // Age log entries
         for (auto& e : log) e.age += dt;
         // Remove old entries
@@ -277,6 +381,9 @@ int main() {
     }
 
     PlayOS::Lifecycle::Shutdown();
+#ifdef __linux__
+    for (auto& dev : g_rawDevs) close(dev.fd);
+#endif
     CloseWindow();
     return 0;
 }
