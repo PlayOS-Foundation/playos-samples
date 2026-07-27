@@ -109,3 +109,31 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 else()
     target_link_libraries(space-invaders PRIVATE PlayOS::playos-battery-null)
 endif()
+
+# input-debug: controller button & axis tester. Draws a visual map of a
+# ROG Ally / Xbox controller and highlights pressed buttons. Useful for
+# verifying which physical buttons reach the platform.
+add_executable(input-debug input-debug/src/main.cpp)
+target_link_libraries(input-debug PRIVATE
+    PlayOS::PlatformAPI
+    PlayOS::playos-input-raylib
+    PlayOS::playos-audio-raylib
+    PlayOS::playos-touch-raylib
+    raylib)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_libraries(input-debug PRIVATE PlayOS::playos-display-linux)
+else()
+    target_link_libraries(input-debug PRIVATE PlayOS::playos-display-raylib)
+endif()
+if(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    target_link_libraries(input-debug PRIVATE PlayOS::playos-storage-windows)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_libraries(input-debug PRIVATE PlayOS::playos-storage-linux)
+else()
+    target_link_libraries(input-debug PRIVATE PlayOS::playos-storage-null)
+endif()
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_libraries(input-debug PRIVATE PlayOS::playos-battery-linux)
+else()
+    target_link_libraries(input-debug PRIVATE PlayOS::playos-battery-null)
+endif()
