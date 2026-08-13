@@ -1,0 +1,13 @@
+{
+  "id": "com.playos.sample-audio",
+  "name": "Audio Sine",
+  "version": "1.0.0",
+  "executable": "bin/game",
+  "api_version": 1,
+  "graphics": "gles3",
+  "architecture": "x86_64",
+  "controllers": true,
+  "network": false,
+  "description": "PlayOS audio sample placeholder. Sine playback is wired in Sprint 8.",
+  "icon": "assets/icon.png"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "com.playos.sample-input",
+  "name": "Input Debug",
+  "version": "1.0.0",
+  "executable": "bin/game",
+  "api_version": 1,
+  "graphics": "gles3",
+  "architecture": "x86_64",
+  "controllers": true,
+  "network": false,
+  "description": "PlayOS sample that reports the current logical controller state.",
+  "icon": "assets/icon.png"
+}

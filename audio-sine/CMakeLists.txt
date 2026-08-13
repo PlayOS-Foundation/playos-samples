@@ -1,0 +1,27 @@
+cmake_minimum_required(VERSION 3.18)
+project(playos-sample-audio C)
+
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
+
+set(PLAYOS_PLATFORM_API_DIR
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../playos-platform-api"
+    CACHE PATH "Path to playos-platform-api source tree")
+
+find_path(PLAYOS_INCLUDE_DIR playos/playos.h
+    HINTS "${PLAYOS_PLATFORM_API_DIR}/include"
+          "${PLAYOS_PLATFORM_API_DIR}/install/include"
+    REQUIRED)
+
+find_library(PLAYOS_LIB playos
+    HINTS "${PLAYOS_PLATFORM_API_DIR}/build"
+          "${PLAYOS_PLATFORM_API_DIR}/install/lib"
+    REQUIRED)
+
+add_executable(game src/main.c)
+target_include_directories(game PRIVATE ${PLAYOS_INCLUDE_DIR})
+target_link_libraries(game PRIVATE ${PLAYOS_LIB})
+
+set_target_properties(game PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
