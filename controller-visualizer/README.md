@@ -6,34 +6,39 @@ player actuates it — a PlayOS port of raylib's
 example.
 
 This demonstrates the intended engine split on PlayOS: **Raylib owns
-rendering**, while **libplayos owns lifecycle and input**. Because the PlayOS
-raylib backend provides rendering only, this sample drops raylib's gamepad
-enumeration, vibration, keyboard, and mouse handling — all input is read
-through libplayos' hardware-agnostic logical controller API. The gamepad
-itself is drawn programmatically (no texture assets), and triggers are read
-as `[0,1]` axes (rest = 0) rather than raylib's `[-1,1]` convention.
+rendering and gamepad input**, while **libplayos owns lifecycle**. The PlayOS
+raylib backend feeds raylib's native gamepad API (`IsGamepadAvailable`,
+`IsGamepadButtonDown`, `GetGamepadAxisMovement`) from libplayos'
+hardware-agnostic logical controller API, so the sample uses the standard
+raylib gamepad API exactly like upstream `core_input_gamepad`. It drops
+gamepad enumeration, vibration, keyboard, and mouse handling (PlayOS exposes
+a single logical controller). The gamepad itself is drawn programmatically
+(no texture assets), and trigger axes — raylib's `[-1,1]` (rest = -1) — are
+remapped to `[0,1]` (rest = 0) for the trigger bars.
 
 The main loop exits through `playos_lifecycle_poll()` (TERMINATE); the B
 button is also wired as an in-game quit.
 
 ## Button / axis mapping
 
-| Control | PlayOS input |
+| Control | raylib input |
 |---|---|
-| A / B / X / Y | `PLAYOS_BUTTON_SOUTH` / `EAST` / `WEST` / `NORTH` |
-| D-pad | `PLAYOS_BUTTON_DPAD_*` |
-| L1 / R1 | `PLAYOS_BUTTON_L1` / `R1` |
-| L3 / R3 (stick click) | `PLAYOS_BUTTON_L3` / `R3` |
-| Select / Start | `PLAYOS_BUTTON_SELECT` / `START` |
-| Left stick | `PLAYOS_AXIS_LEFT_X`, `PLAYOS_AXIS_LEFT_Y` (deadzone 0.10) |
-| Right stick | `PLAYOS_AXIS_RIGHT_X`, `PLAYOS_AXIS_RIGHT_Y` (deadzone 0.10) |
-| L2 / R2 (analog) | `PLAYOS_AXIS_LEFT_TRIGGER`, `PLAYOS_AXIS_RIGHT_TRIGGER` (`[0,1]`) |
+| A / B / X / Y | `GAMEPAD_BUTTON_RIGHT_FACE_DOWN` / `RIGHT` / `LEFT` / `UP` |
+| D-pad | `GAMEPAD_BUTTON_LEFT_FACE_UP` / `DOWN` / `LEFT` / `RIGHT` |
+| L1 / R1 | `GAMEPAD_BUTTON_LEFT_TRIGGER_1` / `RIGHT_TRIGGER_1` |
+| L3 / R3 (stick click) | `GAMEPAD_BUTTON_LEFT_THUMB` / `RIGHT_THUMB` |
+| Select / Start | `GAMEPAD_BUTTON_MIDDLE_LEFT` / `MIDDLE_RIGHT` |
+| Left stick | `GAMEPAD_AXIS_LEFT_X`, `GAMEPAD_AXIS_LEFT_Y` (deadzone 0.10) |
+| Right stick | `GAMEPAD_AXIS_RIGHT_X`, `GAMEPAD_AXIS_RIGHT_Y` (deadzone 0.10) |
+| L2 / R2 (analog) | `GAMEPAD_AXIS_LEFT_TRIGGER`, `GAMEPAD_AXIS_RIGHT_TRIGGER` (`[-1,1]`, remapped to `[0,1]`) |
 
 ## API surface used
 
 Raylib:
 
 - `InitWindow`, `BeginDrawing` / `ClearBackground`, `EndDrawing`, `CloseWindow`
+- `IsGamepadAvailable`, `GetGamepadName`, `IsGamepadButtonDown`,
+  `IsGamepadButtonPressed`, `GetGamepadAxisMovement`
 - `DrawCircle`, `DrawCircleLines`, `DrawRectangle`, `DrawRectangleLines`,
   `DrawRectangleRounded`, `DrawRectangleRoundedLines`, `DrawText`,
   `MeasureText`, `TextFormat`
@@ -42,7 +47,6 @@ libplayos:
 
 - `playos_lifecycle_poll()`, `playos_lifecycle_wait()`
   (TERMINATE / BACKGROUND / FOREGROUND / SUSPEND / RESUME)
-- `playos_input_get_controller_state()`, `playos_input_button_down()`
 - `playos_log()` (via `PLAYOS_LOG_*` macros)
 
 ## Build

@@ -5,13 +5,15 @@
  * on-screen gamepad and lights each control as the player actuates it.
  *
  * Differences from the upstream raylib example (all intentional):
- *   - No gamepad enumeration/name detection, vibration, keyboard, or mouse:
- *     the PlayOS raylib backend provides rendering only. All input flows
- *     through libplayos' hardware-agnostic logical controller API.
+ *   - Input is read through raylib's native gamepad API
+ *     (IsGamepadAvailable / IsGamepadButtonDown / GetGamepadAxisMovement),
+ *     which the PlayOS raylib backend feeds from libplayos' logical
+ *     controller API. No gamepad enumeration, vibration, keyboard, or
+ *     mouse: the backend exposes a single logical controller.
  *   - No texture assets: the pad is drawn programmatically (this sample
  *     ships with no resource loader so it stays self-contained).
- *   - Triggers are read as axes in [0,1] (rest = 0) rather than raylib's
- *     [-1,1] (rest = -1), so the trigger bars fill from the bottom.
+ *   - Trigger axes are raylib's [-1,1] (rest = -1); the sample remaps them
+ *     to [0,1] (rest = 0) so the trigger bars fill from the bottom.
  *
  * The PlayOS raylib backend never feeds WindowShouldClose(), so the main
  * loop exits through playos_lifecycle_poll() (TERMINATE). The B button is
@@ -85,15 +87,15 @@ draw_stick(int cx, int cy, float x, float y, bool pressed)
 
 /* Draw the D-pad cross. */
 static void
-draw_dpad(int cx, int cy, const PlayOSControllerState *st)
+draw_dpad(int cx, int cy, int gamepad)
 {
     const int arm   = 30;  /* arm length from center */
     const int thick = 22;  /* arm thickness */
 
-    const bool up    = playos_input_button_down(st, PLAYOS_BUTTON_DPAD_UP);
-    const bool down  = playos_input_button_down(st, PLAYOS_BUTTON_DPAD_DOWN);
-    const bool left  = playos_input_button_down(st, PLAYOS_BUTTON_DPAD_LEFT);
-    const bool right = playos_input_button_down(st, PLAYOS_BUTTON_DPAD_RIGHT);
+    const bool up    = IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_LEFT_FACE_UP);
+    const bool down  = IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_LEFT_FACE_DOWN);
+    const bool left  = IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_LEFT_FACE_LEFT);
+    const bool right = IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_LEFT_FACE_RIGHT);
 
     const Color upc    = up    ? kControlHi : kControl;
     const Color downc  = down  ? kControlHi : kControl;
@@ -114,24 +116,24 @@ draw_dpad(int cx, int cy, const PlayOSControllerState *st)
 
 /* Draw the A/B/X/Y face-button diamond (Xbox layout). */
 static void
-draw_face_buttons(int cx, int cy, const PlayOSControllerState *st)
+draw_face_buttons(int cx, int cy, int gamepad)
 {
     const int r = 24;
     const int g = 70; /* gap from diamond center */
 
     struct {
         int x, y;
-        playos_button_mask_t bit;
+        int button;
         const char *label;
     } buttons[4] = {
-        { cx,         cy + g, PLAYOS_BUTTON_SOUTH, "A" },
-        { cx + g,     cy,     PLAYOS_BUTTON_EAST,  "B" },
-        { cx - g,     cy,     PLAYOS_BUTTON_WEST,  "X" },
-        { cx,         cy - g, PLAYOS_BUTTON_NORTH, "Y" },
+        { cx,         cy + g, GAMEPAD_BUTTON_RIGHT_FACE_DOWN,  "A" },
+        { cx + g,     cy,     GAMEPAD_BUTTON_RIGHT_FACE_RIGHT, "B" },
+        { cx - g,     cy,     GAMEPAD_BUTTON_RIGHT_FACE_LEFT,  "X" },
+        { cx,         cy - g, GAMEPAD_BUTTON_RIGHT_FACE_UP,    "Y" },
     };
 
     for (int i = 0; i < 4; i++) {
-        const bool down = playos_input_button_down(st, buttons[i].bit);
+        const bool down = IsGamepadButtonDown(gamepad, buttons[i].button);
         const Color fill = down ? kControlHi : kControl;
 
         DrawCircle(buttons[i].x, buttons[i].y, r, fill);
@@ -202,27 +204,31 @@ int main(void)
         if (!running) break;
         if (suspended) continue;   /* just backgrounded — block above */
 
-        /* ── Controller state ── */
-        PlayOSControllerState st;
-        const bool connected = playos_input_get_controller_state(&st) == 0;
+        /* ── Controller state (raylib native gamepad API) ── */
+        const int gamepad = 0;   /* PlayOS exposes a single logical controller */
+        const bool connected = IsGamepadAvailable(gamepad);
 
         /* B quits. */
-        if (connected && playos_input_button_down(&st, PLAYOS_BUTTON_EAST)) {
+        if (connected && IsGamepadButtonPressed(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) {
             PLAYOS_LOG_I(TAG, "B pressed — exiting");
             break;
         }
 
-        const float lx = apply_deadzone(st.axes[PLAYOS_AXIS_LEFT_X]);
-        const float ly = apply_deadzone(st.axes[PLAYOS_AXIS_LEFT_Y]);
-        const float rx = apply_deadzone(st.axes[PLAYOS_AXIS_RIGHT_X]);
-        const float ry = apply_deadzone(st.axes[PLAYOS_AXIS_RIGHT_Y]);
+        const float lx = apply_deadzone(GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_LEFT_X));
+        const float ly = apply_deadzone(GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_LEFT_Y));
+        const float rx = apply_deadzone(GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_RIGHT_X));
+        const float ry = apply_deadzone(GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_RIGHT_Y));
+
+        /* Raylib triggers are [-1,1] (rest = -1); remap to [0,1] (rest = 0). */
+        const float l2 = (GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_LEFT_TRIGGER) + 1.0f) * 0.5f;
+        const float r2 = (GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_RIGHT_TRIGGER) + 1.0f) * 0.5f;
 
         /* ── Render ── */
         BeginDrawing();
         ClearBackground((Color){ 14, 16, 24, 255 });
 
         DrawText("PlayOS Controller Visualizer", 40, 28, 30, kLabel);
-        DrawText(connected ? "Controller connected — B quits"
+        DrawText(connected ? TextFormat("%s connected — B quits", GetGamepadName(gamepad))
                            : "No controller connected — B quits",
                  44, 70, 18, connected ? kDimLabel : (Color){ 236, 94, 106, 255 });
 
@@ -232,36 +238,34 @@ int main(void)
 
         /* Left cluster: stick + D-pad. */
         draw_stick(430, 420, lx, ly,
-                   connected && playos_input_button_down(&st, PLAYOS_BUTTON_L3));
-        draw_dpad(430, 240, &st);
+                   connected && IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_LEFT_THUMB));
+        draw_dpad(430, 240, gamepad);
 
         /* Right cluster: stick + face buttons. */
         draw_stick(850, 420, rx, ry,
-                   connected && playos_input_button_down(&st, PLAYOS_BUTTON_R3));
-        draw_face_buttons(850, 240, &st);
+                   connected && IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_RIGHT_THUMB));
+        draw_face_buttons(850, 240, gamepad);
 
         /* Bumpers. */
         draw_pill(300, 150, 150, 34, "L1",
-                  connected && playos_input_button_down(&st, PLAYOS_BUTTON_L1));
+                  connected && IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_LEFT_TRIGGER_1));
         draw_pill(830, 150, 150, 34, "R1",
-                  connected && playos_input_button_down(&st, PLAYOS_BUTTON_R1));
+                  connected && IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_RIGHT_TRIGGER_1));
 
         /* Triggers. */
-        draw_trigger(255, 196, st.axes[PLAYOS_AXIS_LEFT_TRIGGER], "L2");
-        draw_trigger(999, 196, st.axes[PLAYOS_AXIS_RIGHT_TRIGGER], "R2");
+        draw_trigger(255, 196, l2, "L2");
+        draw_trigger(999, 196, r2, "R2");
 
         /* Center: Start / Select. */
         draw_pill(590, 480, 110, 34, "SELECT",
-                  connected && playos_input_button_down(&st, PLAYOS_BUTTON_SELECT));
+                  connected && IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_MIDDLE_LEFT));
         draw_pill(760, 480, 110, 34, "START",
-                  connected && playos_input_button_down(&st, PLAYOS_BUTTON_START));
+                  connected && IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_MIDDLE_RIGHT));
 
         /* Raw readout. */
         DrawText(
             TextFormat("axes  L=(%+.2f, %+.2f)  R=(%+.2f, %+.2f)  L2=%.2f  R2=%.2f",
-                       lx, ly, rx, ry,
-                       st.axes[PLAYOS_AXIS_LEFT_TRIGGER],
-                       st.axes[PLAYOS_AXIS_RIGHT_TRIGGER]),
+                       lx, ly, rx, ry, l2, r2),
             40, 740, 18, kDimLabel);
 
         EndDrawing();
