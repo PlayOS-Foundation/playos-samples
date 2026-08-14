@@ -8,6 +8,6 @@
   "architecture": "x86_64",
   "controllers": true,
   "network": false,
-  "description": "PlayOS audio sample placeholder. Sine playback is wired in Sprint 8.",
+  "description": "Plays a continuous 440 Hz stereo sine tone with lifecycle pause/resume.",
   "icon": "assets/icon.png"
 }
