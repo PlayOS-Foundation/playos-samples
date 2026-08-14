@@ -1,0 +1,13 @@
+{
+  "id": "com.playos.sample-rotating-squares",
+  "name": "Rotating Squares",
+  "version": "1.0.0",
+  "executable": "bin/game",
+  "api_version": 1,
+  "graphics": "gles2",
+  "architecture": "x86_64",
+  "controllers": true,
+  "network": false,
+  "description": "Raylib sample that renders a field of rotating squares through the shared libraylib PlayOS backend.",
+  "icon": "assets/icon.png"
+}

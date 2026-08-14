@@ -21,6 +21,7 @@ Example games and applications for PlayOS, demonstrating correct use of `libplay
 | `hello-playos` | Minimal init/lifecycle loop | `playos_system_api_version()`, `playos_lifecycle_poll()`, `playos_log()` |
 | `input-debug` | Display all controller input events | `playos_input_get_controller_state()`, `PLAYOS_BUTTON_*` constants |
 | `triangle` | Hardware-accelerated triangle via EGL/Wayland | `playos_display_get_info`, Wayland surface setup |
+| `rotating-squares` | Rotating squares rendered via Raylib | Raylib render API + `playos_lifecycle_poll()`, `playos_input_get_controller_state()` |
 | `audio-sine` | Play a sine wave through ALSA | `playos_audio_open`, `playos_audio_write` |
 | `save-game` | Read/write save data | `playos_storage_get_saves_path()`, `playos_storage_atomic_write()` |
 | `full-game-template` | Complete game loop with all subsystems | All API modules |
@@ -43,6 +44,15 @@ input-debug/
 triangle/
 ├── README.md
 ├── CMakeLists.txt
+└── src/
+    └── main.c
+
+rotating-squares/
+├── README.md
+├── CMakeLists.txt
+├── manifest.json
+├── assets/
+│   └── icon.png
 └── src/
     └── main.c
 
