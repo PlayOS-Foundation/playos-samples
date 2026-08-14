@@ -21,6 +21,26 @@
 
 #define TAG "rotating-squares"
 
+/* Apply a single lifecycle event to the run/suspend state. */
+static void
+handle_lifecycle(PlayOSLifecycleEvent ev, bool *running, bool *suspended)
+{
+    switch (ev) {
+    case PLAYOS_LIFECYCLE_TERMINATE:
+        PLAYOS_LOG_I(TAG, "lifecycle: terminate");
+        *running = false;
+        break;
+    case PLAYOS_LIFECYCLE_BACKGROUND:
+    case PLAYOS_LIFECYCLE_SUSPEND:
+        *suspended = true;
+        break;
+    case PLAYOS_LIFECYCLE_FOREGROUND:
+    case PLAYOS_LIFECYCLE_RESUME:
+        *suspended = false;
+        break;
+    }
+}
+
 int main(void)
 {
     PLAYOS_LOG_I(TAG, "rotating-squares starting");
@@ -46,23 +66,24 @@ int main(void)
     while (running) {
         /* ── Lifecycle (required: the only reliable exit path) ── */
         PlayOSLifecycleEvent ev;
+
+        if (suspended) {
+            /* Hidden or suspended: block until the next lifecycle event so
+             * the process idles at near-zero CPU (the BACKGROUND contract)
+             * instead of busy-spinning. */
+            if (playos_lifecycle_wait(&ev, -1) != 1)
+                continue;
+            handle_lifecycle(ev, &running, &suspended);
+            continue;
+        }
+
         while (playos_lifecycle_poll(&ev) == 1) {
-            switch (ev) {
-            case PLAYOS_LIFECYCLE_TERMINATE:
-                PLAYOS_LOG_I(TAG, "lifecycle: terminate");
-                running = false;
+            handle_lifecycle(ev, &running, &suspended);
+            if (!running)
                 break;
-            case PLAYOS_LIFECYCLE_BACKGROUND:
-            case PLAYOS_LIFECYCLE_SUSPEND:
-                suspended = true;
-                break;
-            case PLAYOS_LIFECYCLE_FOREGROUND:
-            case PLAYOS_LIFECYCLE_RESUME:
-                suspended = false;
-                break;
-            }
         }
         if (!running) break;
+        if (suspended) continue;   /* just backgrounded — block above */
 
         /* ── Controller (B quits) ── */
         PlayOSControllerState ctrl;
@@ -73,8 +94,6 @@ int main(void)
         }
 
         /* ── Render ── */
-        if (suspended) continue;
-
         const double t = GetTime();
 
         BeginDrawing();

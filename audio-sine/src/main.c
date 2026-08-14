@@ -61,6 +61,34 @@ fill_sine(int16_t *samples, int frames, double *phase)
     }
 }
 
+/* Apply a single lifecycle event to the run/suspend state, pausing or
+ * resuming the audio stream to match. */
+static void
+handle_lifecycle(PlayOSLifecycleEvent ev, bool *running, bool *suspended,
+                 bool playing, AudioStream stream,
+                 PlayOSLifecycleEvent *last_ev)
+{
+    *last_ev = ev;
+    switch (ev) {
+    case PLAYOS_LIFECYCLE_TERMINATE:
+        PLAYOS_LOG_I(TAG, "lifecycle: terminate");
+        *running = false;
+        break;
+    case PLAYOS_LIFECYCLE_BACKGROUND:
+    case PLAYOS_LIFECYCLE_SUSPEND:
+        *suspended = true;
+        if (playing && IsAudioStreamPlaying(stream))
+            PauseAudioStream(stream);
+        break;
+    case PLAYOS_LIFECYCLE_FOREGROUND:
+    case PLAYOS_LIFECYCLE_RESUME:
+        *suspended = false;
+        if (playing && !IsAudioStreamPlaying(stream))
+            ResumeAudioStream(stream);
+        break;
+    }
+}
+
 int main(void)
 {
     PLAYOS_LOG_I(TAG, "sample-audio starting");
@@ -105,32 +133,29 @@ int main(void)
     while (running) {
         /* ── Lifecycle (required: the only reliable exit path) ── */
         PlayOSLifecycleEvent ev;
+
+        if (suspended) {
+            /* Hidden or suspended: block until the next lifecycle event so
+             * the process idles at near-zero CPU (the BACKGROUND contract)
+             * instead of busy-spinning. */
+            if (playos_lifecycle_wait(&ev, -1) != 1)
+                continue;
+            handle_lifecycle(ev, &running, &suspended, playing, stream, &last_ev);
+            continue;
+        }
+
         while (playos_lifecycle_poll(&ev) == 1) {
-            last_ev = ev;
-            switch (ev) {
-            case PLAYOS_LIFECYCLE_TERMINATE:
-                PLAYOS_LOG_I(TAG, "lifecycle: terminate");
-                running = false;
+            handle_lifecycle(ev, &running, &suspended, playing, stream, &last_ev);
+            if (!running)
                 break;
-            case PLAYOS_LIFECYCLE_BACKGROUND:
-            case PLAYOS_LIFECYCLE_SUSPEND:
-                suspended = true;
-                if (playing && IsAudioStreamPlaying(stream))
-                    PauseAudioStream(stream);
-                break;
-            case PLAYOS_LIFECYCLE_FOREGROUND:
-            case PLAYOS_LIFECYCLE_RESUME:
-                suspended = false;
-                if (playing && !IsAudioStreamPlaying(stream))
-                    ResumeAudioStream(stream);
-                break;
-            }
         }
         if (!running)
             break;
+        if (suspended)
+            continue;   /* just backgrounded — block above */
 
         /* ── Keep the stream fed (ring-buffer refill). ── */
-        if (playing && !suspended && IsAudioStreamProcessed(stream)) {
+        if (playing && IsAudioStreamProcessed(stream)) {
             fill_sine(chunk, CHUNK_FRAMES, &phase);
             UpdateAudioStream(stream, chunk, CHUNK_FRAMES);
         }
@@ -144,9 +169,6 @@ int main(void)
         }
 
         /* ── Render ── */
-        if (suspended)
-            continue;
-
         PlayOSAudioInfo info;
         (void)playos_audio_get_info(&info);
 
