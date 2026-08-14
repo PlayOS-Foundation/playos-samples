@@ -1,0 +1,13 @@
+{
+  "id": "com.playos.sample-controller-visualizer",
+  "name": "Controller Visualizer",
+  "version": "1.0.0",
+  "executable": "bin/game",
+  "api_version": 1,
+  "graphics": "gles2",
+  "architecture": "x86_64",
+  "controllers": true,
+  "network": false,
+  "description": "Raylib sample that renders an on-screen gamepad and lights each control as it is actuated.",
+  "icon": "assets/icon.png"
+}
