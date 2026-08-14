@@ -1,0 +1,13 @@
+{
+  "id": "com.playos.sample-audio-module",
+  "name": "Module Player",
+  "version": "1.0.0",
+  "executable": "bin/game",
+  "api_version": 1,
+  "graphics": "gles2",
+  "architecture": "x86_64",
+  "controllers": true,
+  "network": false,
+  "description": "Streams a FastTracker II (.xm) module through raylib with a pulsing-circle visualizer. A restarts, X pauses, D-pad adjusts pitch, B quits.",
+  "icon": "assets/icon.png"
+}

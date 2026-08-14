@@ -24,6 +24,7 @@ Example games and applications for PlayOS, demonstrating correct use of `libplay
 | `rotating-squares` | Rotating squares rendered via Raylib | Raylib render API + `playos_lifecycle_poll()`, `playos_input_get_controller_state()` |
 | `controller-visualizer` | On-screen gamepad that lights controls as they're actuated (port of raylib `core_input_gamepad`) | Raylib render API + `playos_input_get_controller_state()`, `playos_input_button_down()` |
 | `audio-sine` | Play a sine wave through ALSA | `playos_audio_open`, `playos_audio_write` |
+| `audio-module` | Stream a FastTracker II (.xm) module through raylib with a pulsing-circle visualizer (port of raylib `audio_module_playing`) | Raylib `LoadMusicStream`/`UpdateMusicStream`/`SetMusicPitch` + `playos_lifecycle_poll()` |
 | `save-game` | Read/write save data | `playos_storage_get_saves_path()`, `playos_storage_atomic_write()` |
 | `full-game-template` | Complete game loop with all subsystems | All API modules |
 
