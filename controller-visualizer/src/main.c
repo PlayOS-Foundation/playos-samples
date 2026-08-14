@@ -180,6 +180,17 @@ int main(void)
 
     InitWindow(1280, 800, "PlayOS Controller Visualizer");
 
+    /* The PlayOS raylib backend forces fullscreen at the compositor's real
+     * surface size (1920x1080), so the 1280x800 passed to InitWindow is only
+     * a hint. Derive the real surface and center the pad on it — the upstream
+     * sample hardcodes 1280x800 coordinates, which leaves the pad off-center. */
+    const int sw = GetScreenWidth();
+    const int sh = GetScreenHeight();
+    const int pad_w = 800;
+    const int pad_h = 520;
+    const int pad_x = (sw - pad_w) / 2;
+    const int pad_y = (sh - pad_h) / 2;
+
     bool running   = true;
     bool suspended = false;
 
@@ -232,41 +243,46 @@ int main(void)
                            : "No controller connected — B quits",
                  44, 70, 18, connected ? kDimLabel : (Color){ 236, 94, 106, 255 });
 
-        /* Pad body. */
-        DrawRectangleRounded((Rectangle){ 240, 130, 800, 520 }, 0.25f, 16, kBody);
-        DrawRectangleRoundedLines((Rectangle){ 240, 130, 800, 520 }, 0.25f, 16, kWellRim);
+        /* Pad body — centered on the compositor surface. */
+        DrawRectangleRounded((Rectangle){ (float)pad_x, (float)pad_y, (float)pad_w, (float)pad_h },
+                             0.25f, 16, kBody);
+        DrawRectangleRoundedLines((Rectangle){ (float)pad_x, (float)pad_y, (float)pad_w, (float)pad_h },
+                                  0.25f, 16, kWellRim);
 
         /* Left cluster: stick + D-pad. */
-        draw_stick(430, 420, lx, ly,
+        draw_stick(pad_x + 190, pad_y + 380, lx, ly,
                    connected && IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_LEFT_THUMB));
-        draw_dpad(430, 240, gamepad);
+        draw_dpad(pad_x + 190, pad_y + 190, gamepad);
 
         /* Right cluster: stick + face buttons. */
-        draw_stick(850, 420, rx, ry,
+        draw_stick(pad_x + 610, pad_y + 380, rx, ry,
                    connected && IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_RIGHT_THUMB));
-        draw_face_buttons(850, 240, gamepad);
+        draw_face_buttons(pad_x + 610, pad_y + 190, gamepad);
 
         /* Bumpers. */
-        draw_pill(300, 150, 150, 34, "L1",
+        draw_pill(pad_x + 60,  pad_y + 16, 150, 34, "L1",
                   connected && IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_LEFT_TRIGGER_1));
-        draw_pill(830, 150, 150, 34, "R1",
+        draw_pill(pad_x + 590, pad_y + 16, 150, 34, "R1",
                   connected && IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_RIGHT_TRIGGER_1));
 
         /* Triggers. */
-        draw_trigger(255, 196, l2, "L2");
-        draw_trigger(999, 196, r2, "R2");
+        draw_trigger(pad_x + 15,  pad_y + 56, l2, "L2");
+        draw_trigger(pad_x + 759, pad_y + 56, r2, "R2");
 
-        /* Center: Start / Select. */
-        draw_pill(590, 480, 110, 34, "SELECT",
+        /* Center: Start / Select (symmetric about the pad's vertical axis). */
+        draw_pill(pad_x + 280, pad_y + 462, 110, 34, "SELECT",
                   connected && IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_MIDDLE_LEFT));
-        draw_pill(760, 480, 110, 34, "START",
+        draw_pill(pad_x + 410, pad_y + 462, 110, 34, "START",
                   connected && IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_MIDDLE_RIGHT));
 
-        /* Raw readout. */
-        DrawText(
-            TextFormat("axes  L=(%+.2f, %+.2f)  R=(%+.2f, %+.2f)  L2=%.2f  R2=%.2f",
-                       lx, ly, rx, ry, l2, r2),
-            40, 740, 18, kDimLabel);
+        /* Raw readout — centered below the pad. */
+        {
+            const char *readout = TextFormat(
+                "axes  L=(%+.2f, %+.2f)  R=(%+.2f, %+.2f)  L2=%.2f  R2=%.2f",
+                lx, ly, rx, ry, l2, r2);
+            DrawText(readout, (sw - MeasureText(readout, 18)) / 2,
+                     pad_y + pad_h + 36, 18, kDimLabel);
+        }
 
         EndDrawing();
     }
