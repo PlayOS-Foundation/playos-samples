@@ -32,7 +32,22 @@ int main(void)
     }
 
     PlayOSLifecycleEvent ev;
-    (void)playos_lifecycle_wait(&ev, 200);
+    int rc = playos_lifecycle_wait(&ev, 200);
+    if (rc == 1) {
+        const char *name = "UNKNOWN";
+        switch (ev) {
+        case PLAYOS_LIFECYCLE_FOREGROUND: name = "FOREGROUND"; break;
+        case PLAYOS_LIFECYCLE_BACKGROUND: name = "BACKGROUND"; break;
+        case PLAYOS_LIFECYCLE_SUSPEND:    name = "SUSPEND";    break;
+        case PLAYOS_LIFECYCLE_RESUME:     name = "RESUME";     break;
+        case PLAYOS_LIFECYCLE_TERMINATE:  name = "TERMINATE";  break;
+        }
+        PLAYOS_LOG_I("input", "lifecycle event: %s", name);
+    } else if (rc == 0) {
+        PLAYOS_LOG_I("input", "no lifecycle event within 200ms");
+    } else {
+        PLAYOS_LOG_W("input", "lifecycle wait failed");
+    }
 
     PLAYOS_LOG_I("input", "sample-input exiting");
     return 0;
