@@ -1,0 +1,13 @@
+{
+  "id": "com.playos.sample-bullet-hell",
+  "name": "Bullet Hell",
+  "version": "1.0.0",
+  "executable": "bin/game",
+  "api_version": 1,
+  "graphics": "gles3",
+  "architecture": "x86_64",
+  "controllers": true,
+  "network": false,
+  "description": "A spinning magic circle sprays a radial fan of bullets. D-pad tunes rows and speed, X/Y tune cooldown, A advances the angle, RB toggles the draw method, LB clears, B quits.",
+  "icon": "assets/icon.png"
+}
