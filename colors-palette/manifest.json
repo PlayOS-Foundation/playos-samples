@@ -1,0 +1,13 @@
+{
+  "id": "com.playos.sample-colors-palette",
+  "name": "Colors Palette",
+  "version": "1.0.0",
+  "executable": "bin/game",
+  "api_version": 1,
+  "graphics": "gles3",
+  "architecture": "x86_64",
+  "controllers": true,
+  "network": false,
+  "description": "Renders raylib's 21 built-in colors as an interactive 7x3 grid. D-pad moves the selection cursor, A toggles name labels, B quits.",
+  "icon": "assets/icon.png"
+}
