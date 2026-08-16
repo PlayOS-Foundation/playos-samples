@@ -12,7 +12,9 @@ in vec3 fragNormal;
 uniform sampler2D texture0;
 uniform vec4 colDiffuse;
 
-// View position (set manually each frame from the camera).
+// View position (camera eye), used for the specular term. Must be read in
+// main(), otherwise the linker optimizes it out and its uniform location
+// resolves to -1 (which defeats the shader-validity gating in main.c).
 uniform vec3 viewPos;
 
 // Number of discrete toon bands (2 = hard binary, 10 = default, 20 = near-smooth).
@@ -36,8 +38,10 @@ void main()
     vec4 texColor = texture(texture0, fragTexCoord);
     vec3 baseColor = texColor.rgb * fragColor.rgb * colDiffuse.rgb;
     vec3 norm = normalize(fragNormal);
+    vec3 viewD = normalize(viewPos - fragPosition);
 
     float lightAccum = 0.08; // ambient floor
+    vec3 specular = vec3(0.0);
 
     for (int i = 0; i < 4; i++)
     {
@@ -61,8 +65,13 @@ void main()
         // min() guards against NdotL == 1.0 producing an out-of-range index.
         float quantized = min(floor(NdotL * numBands), numBands - 1.0) / (numBands - 1.0);
         lightAccum += quantized * lights[i].color.r;
+
+        // Subtle Phong highlight. This also guarantees viewPos/fragPosition
+        // are consumed so the linker keeps their locations active.
+        if (NdotL > 0.0)
+            specular += pow(max(dot(viewD, reflect(-lightDir, norm)), 0.0), 16.0) * lights[i].color.rgb;
     }
 
     lightAccum = clamp(lightAccum, 0.0, 1.0);
-    finalColor = vec4(baseColor * lightAccum, texColor.a * colDiffuse.a);
+    finalColor = vec4(baseColor * lightAccum + specular, texColor.a * colDiffuse.a);
 }
