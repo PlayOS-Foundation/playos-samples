@@ -1,0 +1,13 @@
+{
+  "id": "com.playos.sample-background-scrolling",
+  "name": "Background Scrolling",
+  "version": "1.0.0",
+  "executable": "bin/game",
+  "api_version": 1,
+  "graphics": "gles3",
+  "architecture": "x86_64",
+  "controllers": true,
+  "network": false,
+  "description": "A cyberpunk street scene with three parallax layers scrolling at different speeds. Watch-only demo; B quits.",
+  "icon": "assets/icon.png"
+}
