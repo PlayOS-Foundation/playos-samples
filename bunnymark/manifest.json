@@ -1,0 +1,13 @@
+{
+  "id": "com.playos.sample-bunnymark",
+  "name": "Bunnymark",
+  "version": "1.0.0",
+  "executable": "bin/game",
+  "api_version": 1,
+  "graphics": "gles3",
+  "architecture": "x86_64",
+  "controllers": true,
+  "network": false,
+  "description": "Spawn up to 80,000 textured bunnies and measure renderer throughput. Hold A to spawn, X pauses, LB clears, B quits.",
+  "icon": "assets/icon.png"
+}
