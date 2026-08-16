@@ -1,0 +1,13 @@
+{
+  "id": "com.playos.sample-spotlight",
+  "name": "Spotlight",
+  "version": "1.0.0",
+  "executable": "bin/game",
+  "api_version": 1,
+  "graphics": "gles3",
+  "architecture": "x86_64",
+  "controllers": true,
+  "network": false,
+  "description": "A fragment-shader spotlight demo: steer a pool of light across a pitch-black star field. Left stick/D-pad moves the spotlight, B quits.",
+  "icon": "assets/icon.png"
+}
