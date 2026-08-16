@@ -1,19 +1,13 @@
-#version 300 es
+#version 100
+
 precision mediump float;
 
-// Input vertex attributes (from the default raylib vertex shader)
-in vec2 fragTexCoord;
-in vec4 fragColor;
-
-// Output fragment color
-out vec4 finalColor;
-
-#define MAX_SPOTS 3
+#define MAX_SPOTS   3
 
 struct Spot {
-    vec2 pos;      // window coords of spot
-    float inner;   // inner fully transparent centre radius
-    float radius;  // alpha fades out to this radius
+    vec2 pos;        // window coords of spot
+    float inner;    // inner fully transparent centre radius
+    float radius;    // alpha fades out to this radius
 };
 
 uniform Spot spots[MAX_SPOTS];  // Spotlight positions array
@@ -26,15 +20,9 @@ void main()
     // Get the position of the current fragment (screen coordinates!)
     vec2 pos = vec2(gl_FragCoord.x, gl_FragCoord.y);
 
-    // Find out which spotlight is nearest. NOTE: uniform arrays are only
-    // indexed with the (dynamically uniform) loop counters here — the
-    // non-constant `spots[fi]` lookup from the desktop GLSL 330 variant is
-    // rejected by strict ES GLSL compilers, so the nearest spot's inner/radius
-    // are carried out in plain floats instead.
+    // Find out which spotlight is nearest
     float d = 65000.0;  // some high value
-    float nearestInner = 0.0;
-    float nearestRadius = 0.0;
-    bool found = false;
+    int fi = -1;        // found index
 
     for (int i = 0; i < MAX_SPOTS; i++)
     {
@@ -45,28 +33,48 @@ void main()
             if (d > dj)
             {
                 d = dj;
-                nearestInner = spots[i].inner;
-                nearestRadius = spots[i].radius;
-                found = true;
+                fi = i;
             }
         }
     }
 
     // d now equals distance to nearest spot...
-    // allowing for the different radii of all spotlights
-    if (found)
+    // allowing for the different radii of all spotlights.
+    // NOTE: uniform arrays cannot be indexed dynamically in GLSL ES 1.00,
+    // so the nearest spot is resolved with explicit enumeration (fi == 0/1/2)
+    // rather than `spots[fi]`.
+    if (fi == 0)
     {
-        if (d > nearestRadius) alpha = 1.0;
+        if (d > spots[0].radius) alpha = 1.0;
         else
         {
-            if (d < nearestInner) alpha = 0.0;
-            else alpha = (d - nearestInner) / (nearestRadius - nearestInner);
+            if (d < spots[0].inner) alpha = 0.0;
+            else alpha = (d - spots[0].inner)/(spots[0].radius - spots[0].inner);
+        }
+    }
+    else if (fi == 1)
+    {
+        if (d > spots[1].radius) alpha = 1.0;
+        else
+        {
+            if (d < spots[1].inner) alpha = 0.0;
+            else alpha = (d - spots[1].inner)/(spots[1].radius - spots[1].inner);
+        }
+    }
+    else if (fi == 2)
+    {
+        if (d > spots[2].radius) alpha = 1.0;
+        else
+        {
+            if (d < spots[2].inner) alpha = 0.0;
+            else alpha = (d - spots[2].inner)/(spots[2].radius - spots[2].inner);
         }
     }
 
     // Right hand side of screen is dimly lit,
     // could make the threshold value user definable
-    if ((pos.x > screenWidth / 2.0) && (alpha > 0.9)) alpha = 0.9;
+    if ((pos.x > screenWidth/2.0) && (alpha > 0.9)) alpha = 0.9;
 
-    finalColor = vec4(0.0, 0.0, 0.0, alpha);
+    // could make the black out colour user definable...
+    gl_FragColor = vec4(0, 0, 0, alpha);
 }

@@ -7,10 +7,12 @@
  * black except where spotlights fall, and the right half is dimly lit.
  *
  * Differences from the upstream raylib example (all intentional):
- *   - The fragment shader is GLSL ES 3.00 (`#version 300 es`, `out vec4
- *     finalColor`, `precision mediump float;`) to match the PlayOS raylib
- *     backend's OpenGL ES 3.0 default shaders, instead of the upstream
- *     desktop GLSL 330 / mobile GLSL 100 pair.
+ *   - The fragment shader is GLSL ES 1.00 (`#version 100`, `gl_FragColor`,
+ *     `precision mediump float;`) to match the PlayOS raylib backend, which
+ *     is built with GRAPHICS_API_OPENGL_ES2 (so its default vertex shader is
+ *     `#version 100`). A `#version 300 es` fragment shader cannot link against
+ *     that vertex shader ("all shaders must use same shading language
+ *     version"), which silently falls back to the default shader.
  *   - Spot 0 (the "mouse" spotlight) is driven by the left stick (or D-pad)
  *     on device; the upstream example follows the mouse. Mouse is kept as a
  *     desktop fallback.
@@ -147,7 +149,6 @@ main(void)
 
     /* Use the default vertex shader with our custom fragment shader. */
     Shader shdrSpot = LoadShader(0, "resources/spotlight.fs");
-    PLAYOS_LOG_I(TAG, "spotlight shader ready: %s", IsShaderValid(shdrSpot) ? "yes" : "NO");
     if (!IsShaderValid(shdrSpot))
         PLAYOS_LOG_E(TAG, "spotlight.fs failed to compile/link — overlay disabled");
 
@@ -176,6 +177,16 @@ main(void)
     float sw = (float)GetScreenWidth();
     int screenWidthLoc = GetShaderLocation(shdrSpot, "screenWidth");
     PLAYOS_LOG_I(TAG, "screenWidth uniform loc=%d", screenWidthLoc);
+
+    /* A link failure silently falls back to the default shader, whose id is
+     * still > 0 — so IsShaderValid() alone can't detect it. The default
+     * shader has none of our custom uniforms, so any of them resolving to -1
+     * proves we fell back. Gate the overlay on this so a failed shader can
+     * never cover the whole scene in opaque white. */
+    bool shaderReady = IsShaderValid(shdrSpot)
+                       && (screenWidthLoc >= 0)
+                       && (spots[0].positionLoc >= 0);
+    PLAYOS_LOG_I(TAG, "spotlight shader ready: %s", shaderReady ? "yes" : "NO");
     SetShaderValue(shdrSpot, screenWidthLoc, &sw, SHADER_UNIFORM_FLOAT);
 
     /* Randomize the locations and velocities of the spotlights and
@@ -317,7 +328,7 @@ main(void)
         }
 
         /* Draw the spotlights (the shader does the lighting). */
-        if (IsShaderValid(shdrSpot))
+        if (shaderReady)
         {
             BeginShaderMode(shdrSpot);
                 DrawRectangle(0, 0, screenWidth, screenHeight, WHITE);
