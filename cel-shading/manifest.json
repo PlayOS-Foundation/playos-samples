@@ -1,0 +1,13 @@
+{
+  "id": "com.playos.sample-cel-shading",
+  "name": "Cel Shading",
+  "version": "1.0.0",
+  "executable": "bin/game",
+  "api_version": 1,
+  "graphics": "gles3",
+  "architecture": "x86_64",
+  "controllers": true,
+  "network": false,
+  "description": "A GLSL ES 3.00 cel (toon) shading demo: a GLB car lit by a spinning directional light and quantized into adjustable toon bands, with an inverted-hull outline pass. A toggles cel, X toggles outline, D-pad up/down steps bands, B quits.",
+  "icon": "assets/icon.png"
+}
