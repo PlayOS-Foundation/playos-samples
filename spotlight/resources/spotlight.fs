@@ -26,9 +26,15 @@ void main()
     // Get the position of the current fragment (screen coordinates!)
     vec2 pos = vec2(gl_FragCoord.x, gl_FragCoord.y);
 
-    // Find out which spotlight is nearest
+    // Find out which spotlight is nearest. NOTE: uniform arrays are only
+    // indexed with the (dynamically uniform) loop counters here — the
+    // non-constant `spots[fi]` lookup from the desktop GLSL 330 variant is
+    // rejected by strict ES GLSL compilers, so the nearest spot's inner/radius
+    // are carried out in plain floats instead.
     float d = 65000.0;  // some high value
-    int fi = -1;        // found index
+    float nearestInner = 0.0;
+    float nearestRadius = 0.0;
+    bool found = false;
 
     for (int i = 0; i < MAX_SPOTS; i++)
     {
@@ -39,20 +45,22 @@ void main()
             if (d > dj)
             {
                 d = dj;
-                fi = i;
+                nearestInner = spots[i].inner;
+                nearestRadius = spots[i].radius;
+                found = true;
             }
         }
     }
 
     // d now equals distance to nearest spot...
     // allowing for the different radii of all spotlights
-    if (fi != -1)
+    if (found)
     {
-        if (d > spots[fi].radius) alpha = 1.0;
+        if (d > nearestRadius) alpha = 1.0;
         else
         {
-            if (d < spots[fi].inner) alpha = 0.0;
-            else alpha = (d - spots[fi].inner) / (spots[fi].radius - spots[fi].inner);
+            if (d < nearestInner) alpha = 0.0;
+            else alpha = (d - nearestInner) / (nearestRadius - nearestInner);
         }
     }
 

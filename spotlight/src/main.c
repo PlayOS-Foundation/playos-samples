@@ -30,7 +30,9 @@
 #include "raylib.h"
 
 #include <math.h>
+#include <stdarg.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #define TAG       "spotlight"
 #define MAX_SPOTS 3        // NOTE: must match the define in the shader
@@ -68,6 +70,18 @@ lifecycle_name(PlayOSLifecycleEvent ev)
     return "unknown";
 }
 
+/* Forward raylib's trace log (including GL shader compile errors) into the
+ * game's own stderr stream, which playos-init persists to
+ * /data/log/game-<id>-stderr.log. */
+static void
+raylib_trace_log(int logLevel, const char *text, va_list args)
+{
+    (void)logLevel;
+    char buf[512];
+    vsnprintf(buf, sizeof(buf), text, args);
+    playos_log(PLAYOS_LOG_INFO, "raylib", "%s", buf);
+}
+
 static void
 ResetStar(Star *star, float scale, int screenWidth, int screenHeight)
 {
@@ -102,6 +116,8 @@ main(void)
 {
     PLAYOS_LOG_I(TAG, "spotlight starting");
 
+    SetTraceLogCallback(raylib_trace_log);
+
     InitWindow(1280, 800, "PlayOS Spotlight");
     HideCursor();
     SetTargetFPS(60);
@@ -116,6 +132,7 @@ main(void)
     const int   starSize = (int)(2.0f * scale) < 2 ? 2 : (int)(2.0f * scale);
 
     Texture texRay = LoadTexture("resources/raysan.png");
+    PLAYOS_LOG_I(TAG, "raysan texture ready: %s", IsTextureValid(texRay) ? "yes" : "NO");
 
     Star stars[MAX_STARS] = { 0 };
     for (int n = 0; n < MAX_STARS; n++)
@@ -130,6 +147,9 @@ main(void)
 
     /* Use the default vertex shader with our custom fragment shader. */
     Shader shdrSpot = LoadShader(0, "resources/spotlight.fs");
+    PLAYOS_LOG_I(TAG, "spotlight shader ready: %s", IsShaderValid(shdrSpot) ? "yes" : "NO");
+    if (!IsShaderValid(shdrSpot))
+        PLAYOS_LOG_E(TAG, "spotlight.fs failed to compile/link — overlay disabled");
 
     /* Get the locations of the spots in the shader. */
     Spot spots[MAX_SPOTS];
@@ -146,12 +166,17 @@ main(void)
         spots[i].positionLoc = GetShaderLocation(shdrSpot, posName);
         spots[i].innerLoc    = GetShaderLocation(shdrSpot, innerName);
         spots[i].radiusLoc   = GetShaderLocation(shdrSpot, radiusName);
+
+        PLAYOS_LOG_I(TAG, "spot %d uniforms: pos=%d inner=%d radius=%d",
+                     i, spots[i].positionLoc, spots[i].innerLoc, spots[i].radiusLoc);
     }
 
     /* Tell the shader how wide the screen is so we can have a pitch black
      * half and a dimly lit half. */
     float sw = (float)GetScreenWidth();
-    SetShaderValue(shdrSpot, GetShaderLocation(shdrSpot, "screenWidth"), &sw, SHADER_UNIFORM_FLOAT);
+    int screenWidthLoc = GetShaderLocation(shdrSpot, "screenWidth");
+    PLAYOS_LOG_I(TAG, "screenWidth uniform loc=%d", screenWidthLoc);
+    SetShaderValue(shdrSpot, screenWidthLoc, &sw, SHADER_UNIFORM_FLOAT);
 
     /* Randomize the locations and velocities of the spotlights and
      * initialize the shader locations. */
@@ -292,9 +317,12 @@ main(void)
         }
 
         /* Draw the spotlights (the shader does the lighting). */
-        BeginShaderMode(shdrSpot);
-            DrawRectangle(0, 0, screenWidth, screenHeight, WHITE);
-        EndShaderMode();
+        if (IsShaderValid(shdrSpot))
+        {
+            BeginShaderMode(shdrSpot);
+                DrawRectangle(0, 0, screenWidth, screenHeight, WHITE);
+            EndShaderMode();
+        }
 
         DrawFPS(10, 10);
 
