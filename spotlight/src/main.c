@@ -7,12 +7,13 @@
  * black except where spotlights fall, and the right half is dimly lit.
  *
  * Differences from the upstream raylib example (all intentional):
- *   - The fragment shader is GLSL ES 1.00 (`#version 100`, `gl_FragColor`,
- *     `precision mediump float;`) to match the PlayOS raylib backend, which
- *     is built with GRAPHICS_API_OPENGL_ES2 (so its default vertex shader is
- *     `#version 100`). A `#version 300 es` fragment shader cannot link against
- *     that vertex shader ("all shaders must use same shading language
- *     version"), which silently falls back to the default shader.
+ *   - The fragment shader is GLSL ES 3.00 (`#version 300 es`,
+ *     `out vec4 finalColor`, `precision mediump float;`) to match the PlayOS
+ *     raylib backend, which is built with GRAPHICS_API_OPENGL_ES3 (so its
+ *     default vertex shader is `#version 300 es`). A `#version 100` fragment
+ *     shader cannot link against that vertex shader ("all shaders must use
+ *     the same shading language version"), which silently falls back to the
+ *     default shader.
  *   - Spot 0 (the "mouse" spotlight) is driven by the left stick (or D-pad)
  *     on device; the upstream example follows the mouse. Mouse is kept as a
  *     desktop fallback.

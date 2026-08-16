@@ -1,6 +1,8 @@
-#version 100
+#version 300 es
 
 precision mediump float;
+
+out vec4 finalColor;
 
 #define MAX_SPOTS   3
 
@@ -40,9 +42,9 @@ void main()
 
     // d now equals distance to nearest spot...
     // allowing for the different radii of all spotlights.
-    // NOTE: uniform arrays cannot be indexed dynamically in GLSL ES 1.00,
-    // so the nearest spot is resolved with explicit enumeration (fi == 0/1/2)
-    // rather than `spots[fi]`.
+    // NOTE: GLSL ES 3.00 allows dynamic uniform-array indexing, but the
+    // nearest spot is resolved with explicit enumeration (fi == 0/1/2) for
+    // clarity and compatibility.
     if (fi == 0)
     {
         if (d > spots[0].radius) alpha = 1.0;
@@ -76,5 +78,5 @@ void main()
     if ((pos.x > screenWidth/2.0) && (alpha > 0.9)) alpha = 0.9;
 
     // could make the black out colour user definable...
-    gl_FragColor = vec4(0, 0, 0, alpha);
+    finalColor = vec4(0, 0, 0, alpha);
 }

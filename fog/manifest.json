@@ -1,0 +1,13 @@
+{
+  "id": "com.playos.sample-fog",
+  "name": "Fog Rendering",
+  "version": "1.0.0",
+  "executable": "bin/game",
+  "api_version": 1,
+  "graphics": "gles3",
+  "architecture": "x86_64",
+  "controllers": true,
+  "network": false,
+  "description": "A GLSL ES 3.00 fog demo: a torus, cube and sphere lit by a point light and wrapped in exponential distance fog. D-pad up/down adjusts fog density, B quits.",
+  "icon": "assets/icon.png"
+}
