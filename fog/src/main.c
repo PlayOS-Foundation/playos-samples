@@ -21,8 +21,8 @@
  *     layout, so it stays readable on a 1920x1080 (Ally) display.
  *   - Lifecycle drives the loop: TERMINATE exits; BACKGROUND/SUSPEND idles
  *     the process, FOREGROUND/RESUME resumes it. The PlayOS raylib backend
- *     never feeds WindowShouldClose(), so the lifecycle (or the B button)
- *     is the only reliable exit.
+ *     never feeds WindowShouldClose(), so the lifecycle is the only exit
+ *     path.
  *
  * SPDX-License-Identifier: MIT
  */
@@ -180,13 +180,6 @@ main(void)
         const int  gamepad   = 0;
         const bool connected = IsGamepadAvailable(gamepad);
 
-        /* B quits. */
-        if (connected && IsGamepadButtonPressed(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT))
-        {
-            PLAYOS_LOG_I(TAG, "B pressed — exiting");
-            break;
-        }
-
         /* ── Update ── */
         UpdateCamera(&camera, CAMERA_ORBITAL);   // Auto-orbit around target
 
@@ -237,7 +230,6 @@ main(void)
                      ? TextFormat("D-PAD UP/DOWN changes fog density [%.2f]", fogDensity)
                      : TextFormat("KEY_UP/KEY_DOWN changes fog density [%.2f]", fogDensity),
                  10, 10, (int)(20 * scale), RAYWHITE);
-        DrawText("B = QUIT", 10, screenHeight - (int)(30 * scale), (int)(18 * scale), GRAY);
 
         EndDrawing();
     }

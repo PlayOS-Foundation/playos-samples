@@ -22,8 +22,8 @@
  *     speeds, bob sizes and text all scale with screen height.
  *   - Lifecycle drives the loop: TERMINATE exits; BACKGROUND/SUSPEND idles
  *     the process, FOREGROUND/RESUME resumes it. The PlayOS raylib backend
- *     never feeds WindowShouldClose(), so the lifecycle (or the B button)
- *     is the only reliable exit.
+ *     never feeds WindowShouldClose(), so the lifecycle is the only exit
+ *     path.
  *
  * SPDX-License-Identifier: MIT
  */
@@ -247,13 +247,6 @@ main(void)
         const int  gamepad   = 0;
         const bool connected = IsGamepadAvailable(gamepad);
 
-        /* B quits. */
-        if (connected && IsGamepadButtonPressed(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT))
-        {
-            PLAYOS_LOG_I(TAG, "B pressed — exiting");
-            break;
-        }
-
         frameCounter++;
 
         /* Move the stars, resetting them if they go offscreen. */
@@ -342,7 +335,6 @@ main(void)
                  10, (int)(30 * scale), (int)(20 * scale), GREEN);
         DrawText("Pitch Black", (int)(screenWidth * 0.2f), screenHeight / 2, (int)(20 * scale), GREEN);
         DrawText("Dark", (int)(screenWidth * 0.66f), screenHeight / 2, (int)(20 * scale), GREEN);
-        DrawText("B = QUIT", 10, screenHeight - (int)(30 * scale), (int)(18 * scale), GRAY);
 
         EndDrawing();
     }

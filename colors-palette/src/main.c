@@ -19,8 +19,8 @@
  *     GetScreenWidth()/GetScreenHeight() after InitWindow().
  *   - Lifecycle drives the loop: TERMINATE exits; BACKGROUND/SUSPEND idles
  *     the process, FOREGROUND/RESUME resumes it. The PlayOS raylib backend
- *     never feeds WindowShouldClose(), so the lifecycle (or the B button)
- *     is the only reliable exit.
+ *     never feeds WindowShouldClose(), so the lifecycle is the only exit
+ *     path.
  *
  * SPDX-License-Identifier: MIT
  */
@@ -141,12 +141,6 @@ main(void)
         const int  gamepad   = 0;
         const bool connected = IsGamepadAvailable(gamepad);
 
-        /* B quits. */
-        if (connected && IsGamepadButtonPressed(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) {
-            PLAYOS_LOG_I(TAG, "B pressed — exiting");
-            break;
-        }
-
         /* D-pad moves the cursor. */
         if (connected && IsGamepadButtonPressed(gamepad, GAMEPAD_BUTTON_LEFT_FACE_LEFT))  move_cursor(&selected, -1,  0);
         if (connected && IsGamepadButtonPressed(gamepad, GAMEPAD_BUTTON_LEFT_FACE_RIGHT)) move_cursor(&selected,  1,  0);
@@ -174,7 +168,7 @@ main(void)
         ClearBackground(RAYWHITE);
 
         DrawText("PlayOS Colors Palette", (int)margin, (int)(margin + 4), 32, BLACK);
-        DrawText("D-PAD = SELECT   A = SHOW NAMES   B = QUIT",
+        DrawText("D-PAD = SELECT   A = SHOW NAMES",
                  (int)margin, (int)(header - 46), 18, GRAY);
 
         for (int i = 0; i < MAX_COLORS_COUNT; i++) {

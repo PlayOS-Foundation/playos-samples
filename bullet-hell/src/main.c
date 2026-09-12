@@ -23,8 +23,8 @@
  *     without any per-object coordinate scaling.
  *   - Lifecycle drives the loop: TERMINATE exits; BACKGROUND/SUSPEND idles
  *     the process, FOREGROUND/RESUME resumes it. The PlayOS raylib backend
- *     never feeds WindowShouldClose(), so the lifecycle (or the B button)
- *     is the only reliable exit.
+ *     never feeds WindowShouldClose(), so the lifecycle is the only exit
+ *     path.
  *
  * SPDX-License-Identifier: MIT
  */
@@ -144,12 +144,6 @@ main(void)
         /* ── Input ── */
         const int  gamepad = 0;
         const bool gp      = IsGamepadAvailable(gamepad);
-
-        /* B quits. */
-        if (gp && IsGamepadButtonPressed(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) {
-            PLAYOS_LOG_I(TAG, "B pressed — exiting");
-            break;
-        }
 
         /* D-pad Left/Right: change bullet rows (keyboard A/D). */
         if ((gp && IsGamepadButtonPressed(gamepad, GAMEPAD_BUTTON_LEFT_FACE_LEFT)) ||

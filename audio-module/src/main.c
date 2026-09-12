@@ -22,7 +22,8 @@
  *   - Lifecycle drives pause/resume: BACKGROUND/SUSPEND pauses the stream
  *     and idles the process, FOREGROUND/RESUME resumes it, TERMINATE exits.
  *     The PlayOS raylib backend never feeds WindowShouldClose(), so the
- *     lifecycle (or the B button) is the only reliable exit.
+ *     lifecycle is the only exit path (the pause overlay's Quit Game sends
+ *     TERMINATE). The game must not quit on a button.
  *   - Audio-unavailable is handled gracefully (headless render under
  *     QEMU/CI, matching audio-sine).
  *   - The module ships under resources/ and is resolved relative to the
@@ -177,12 +178,6 @@ int main(void)
         const int  gamepad   = 0;
         const bool connected = IsGamepadAvailable(gamepad);
 
-        /* B quits. */
-        if (connected && IsGamepadButtonPressed(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) {
-            PLAYOS_LOG_I(TAG, "B pressed — exiting");
-            break;
-        }
-
         /* A restarts the module from the top. */
         const bool restart =
             (connected && IsGamepadButtonPressed(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) ||
@@ -264,7 +259,6 @@ int main(void)
         DrawText("PlayOS Module Player", 40, 34, 22, RAYWHITE);
         DrawText("A = RESTART        X = PAUSE/RESUME", 40, 70, 18, LIGHTGRAY);
         DrawText("D-PAD UP/DOWN = PITCH (SPEED)", 40, 96, 18, LIGHTGRAY);
-        DrawText("B = QUIT", 40, 122, 18, LIGHTGRAY);
         DrawText(TextFormat("PITCH: %.3f", pitch), 40, 148, 18, SKYBLUE);
 
         const char *status;

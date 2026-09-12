@@ -6,8 +6,8 @@
  *   - libplayos supplies lifecycle + controller input
  *
  * The PlayOS raylib backend never feeds WindowShouldClose(), so the main
- * loop exits through playos_lifecycle_poll() (TERMINATE). The B button is
- * also wired as a convenient in-game quit.
+ * loop exits through playos_lifecycle_poll() (TERMINATE): quitting is
+ * owned by the platform pause overlay's Quit Game, not by a game button.
  *
  * SPDX-License-Identifier: MIT
  */
@@ -84,14 +84,6 @@ int main(void)
         }
         if (!running) break;
         if (suspended) continue;   /* just backgrounded — block above */
-
-        /* ── Controller (B quits) ── */
-        PlayOSControllerState ctrl;
-        if (playos_input_get_controller_state(&ctrl) == 0 &&
-            playos_input_button_down(&ctrl, PLAYOS_BUTTON_EAST)) {
-            PLAYOS_LOG_I(TAG, "B pressed — exiting");
-            break;
-        }
 
         /* ── Render ── */
         const double t = GetTime();

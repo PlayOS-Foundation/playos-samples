@@ -160,14 +160,6 @@ int main(void)
             UpdateAudioStream(stream, chunk, CHUNK_FRAMES);
         }
 
-        /* ── Controller (B quits) ── */
-        PlayOSControllerState ctrl;
-        if (playos_input_get_controller_state(&ctrl) == 0 &&
-            playos_input_button_down(&ctrl, PLAYOS_BUTTON_EAST)) {
-            PLAYOS_LOG_I(TAG, "B pressed — exiting");
-            break;
-        }
-
         /* ── Render ── */
         PlayOSAudioInfo info;
         (void)playos_audio_get_info(&info);

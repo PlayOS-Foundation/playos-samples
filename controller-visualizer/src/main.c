@@ -16,8 +16,8 @@
  *     to [0,1] (rest = 0) so the trigger bars fill from the bottom.
  *
  * The PlayOS raylib backend never feeds WindowShouldClose(), so the main
- * loop exits through playos_lifecycle_poll() (TERMINATE). The B button is
- * also wired as a convenient in-game quit.
+ * loop exits through playos_lifecycle_poll() (TERMINATE): quitting is
+ * owned by the platform pause overlay's Quit Game, not by a game button.
  *
  * SPDX-License-Identifier: MIT
  */
@@ -219,12 +219,6 @@ int main(void)
         const int gamepad = 0;   /* PlayOS exposes a single logical controller */
         const bool connected = IsGamepadAvailable(gamepad);
 
-        /* B quits. */
-        if (connected && IsGamepadButtonPressed(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) {
-            PLAYOS_LOG_I(TAG, "B pressed — exiting");
-            break;
-        }
-
         const float lx = apply_deadzone(GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_LEFT_X));
         const float ly = apply_deadzone(GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_LEFT_Y));
         const float rx = apply_deadzone(GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_RIGHT_X));
@@ -239,8 +233,8 @@ int main(void)
         ClearBackground((Color){ 14, 16, 24, 255 });
 
         DrawText("PlayOS Controller Visualizer", 40, 28, 30, kLabel);
-        DrawText(connected ? TextFormat("%s connected — B quits", GetGamepadName(gamepad))
-                           : "No controller connected — B quits",
+        DrawText(connected ? TextFormat("%s connected", GetGamepadName(gamepad))
+                           : "No controller connected",
                  44, 70, 18, connected ? kDimLabel : (Color){ 236, 94, 106, 255 });
 
         /* Pad body — centered on the compositor surface. */

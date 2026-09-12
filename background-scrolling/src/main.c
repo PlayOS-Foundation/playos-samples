@@ -17,10 +17,10 @@
  *     a 60 Hz display.
  *   - Lifecycle drives the loop: TERMINATE exits; BACKGROUND/SUSPEND idles
  *     the process, FOREGROUND/RESUME resumes it. The PlayOS raylib backend
- *     never feeds WindowShouldClose(), so the lifecycle (or the B button)
- *     is the only reliable exit.
- *   - B quits (the upstream example has no interaction and exits on ESC /
- *     window close, which the backend never feeds).
+ *     never feeds WindowShouldClose(), so the lifecycle is the only exit
+ *     path.
+ *   - Quitting is the platform's job: the pause overlay's Quit Game sends
+ *     PLAYOS_LIFECYCLE_TERMINATE. The game does not exit on a button.
  *
  * SPDX-License-Identifier: MIT
  */
@@ -126,15 +126,6 @@ main(void)
         if (!running) break;
         if (suspended) continue;
 
-        /* ── Input ── */
-        const int  gamepad = 0;
-        const bool gp      = IsGamepadAvailable(gamepad);
-
-        if (gp && IsGamepadButtonPressed(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) {
-            PLAYOS_LOG_I(TAG, "B pressed — exiting");
-            break;
-        }
-
         /* ── Update ── */
         const float dt = GetFrameTime();
 
@@ -158,7 +149,6 @@ main(void)
         DrawText("BACKGROUND SCROLLING & PARALLAX", 10, 10, 20, RED);
         DrawText("(c) Cyberpunk Street Environment by Luis Zuno (@ansimuz)",
                  screenWidth - 330, screenHeight - 20, 10, RAYWHITE);
-        DrawText("B = QUIT", 10, screenHeight - 20, 10, RAYWHITE);
 
         EndDrawing();
     }

@@ -20,8 +20,8 @@
  *     resolution and fills a 1920x1080 (Ally) display.
  *   - Lifecycle drives the loop: TERMINATE exits; BACKGROUND/SUSPEND idles
  *     the process, FOREGROUND/RESUME resumes it. The PlayOS raylib backend
- *     never feeds WindowShouldClose(), so the lifecycle (or the B button)
- *     is the only reliable exit.
+ *     never feeds WindowShouldClose(), so the lifecycle is the only exit
+ *     path.
  *
  * SPDX-License-Identifier: MIT
  */
@@ -126,12 +126,6 @@ main(void)
         const int  gamepad = 0;
         const bool gp      = IsGamepadAvailable(gamepad);
 
-        /* B quits. */
-        if (gp && IsGamepadButtonPressed(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) {
-            PLAYOS_LOG_I(TAG, "B pressed — exiting");
-            break;
-        }
-
         /* A (hold): spawn bunnies at the scene center (upstream mouse hold). */
         if (gp && IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
             for (int i = 0; i < SPAWN_PER_FRAME; i++) {
@@ -188,7 +182,7 @@ main(void)
                  320, 10, 20, MAROON);
         if (paused)
             DrawText("PAUSED", 600, 10, 20, RED);
-        DrawText("A = SPAWN   X = PAUSE   LB = CLEAR   B = QUIT",
+        DrawText("A = SPAWN   X = PAUSE   LB = CLEAR",
                  10, DESIGN_HEIGHT - 20, 10, BLACK);
         DrawFPS(10, 10);
 
