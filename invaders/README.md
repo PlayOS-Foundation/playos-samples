@@ -77,3 +77,33 @@ Input in the emulator needs a real device passed through
 (`build-emulator.sh invaders build-emu --gamepad /dev/input/eventN`); QEMU's
 synthetic keyboard is not a gamepad, so the device input backend honestly
 reports "no controller" and the ship stays put while the fleet marches.
+
+## Frame pacing and the periodic stutter
+
+On hardware (ROG Ally) the game is smooth but hitches roughly every few seconds.
+The cause is in the platform, not the game loop:
+
+- `rcore_playos.c` `SwapScreenBuffer()` calls **`eglSwapInterval(0)`** and never
+  waits on a **`wl_surface_frame`** callback — the backend renders unthrottled by
+  design (the shell renders on demand).
+- So the only pacing is raylib's `SetTargetFPS()`: a `WaitTime()` sleep plus a 5 %
+  busy-wait (`SUPPORT_PARTIALBUSY_WAIT_LOOP = 1`).
+- A sleep-capped 60 fps client is **not phase-locked to the compositor's vsync**,
+  so a commit that lands just after a repaint is presented a refresh late — the
+  classic "smooth, but a hitch every few seconds".
+
+This build ships a knob and a readout to confirm that on the device:
+
+| | |
+|---|---|
+| Readout (bottom-left) | `FPS <measured>  cap <cap>  worst <n>ms` |
+| Cycle the cap | **SELECT (View)** or **F1**: `60 → 120 → off → 30` |
+| Initial cap | `PLAYOS_GAME_FPS` = `60` \| `120` \| `0` \| `30` |
+| Hitch log | a `pacing: cap N: … worst NN ms` warning for any second with a frame ≥ 40 ms |
+
+**Reading it:** if `worst` stays ~17 ms and `FPS` holds 60 while the picture still
+hitches, the game loop is healthy and the missing piece is compositor-driven
+pacing — i.e. the backend should honour `FLAG_VSYNC_HINT` / pace on
+`wl_surface_frame`, or `cap off` (buffer-release pacing) should be smooth.
+The `cap off` mode exists precisely to A/B that hypothesis on-device.
+
