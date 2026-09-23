@@ -107,3 +107,36 @@ pacing — i.e. the backend should honour `FLAG_VSYNC_HINT` / pace on
 `wl_surface_frame`, or `cap off` (buffer-release pacing) should be smooth.
 The `cap off` mode exists precisely to A/B that hypothesis on-device.
 
+## Backgrounding: never skip `EndDrawing()`
+
+A backgrounded game **must keep calling `EndDrawing()`** — i.e. keep drawing and
+committing a frame. On the PlayOS raylib backend `PollInputEvents()`, which is
+what reads the Wayland socket, is called *inside* `EndDrawing()`. So a "pause"
+loop like
+
+```c
+if (paused) { WaitTime(0.05); continue; }   /* WRONG — kills the game */
+```
+
+stops servicing the compositor entirely. Its requests queue unread, and roughly
+1.5 s later the compositor kills the client:
+
+```
+[shell] ARMOURY CRATE tap - showing overlay
+[shell] async: game crashed                     ← 1.6 s later, no clean exit
+```
+
+The overlay/exit flow then never completes: the screen is left on the last frame
+with no way to quit (hit twice on the ROG Ally, 2026-09-22, requiring hard
+reboots). The game had never logged `exiting after … frames` in any session.
+
+The fix is to gate only the **simulation** on `paused` and always fall through to
+draw and `EndDrawing()`:
+
+```c
+if (!g.paused) { update_play(dt, in); }   /* skip the game, not the frame */
+... draw ...
+EndDrawing();      /* swaps buffers AND pumps Wayland events */
+```
+
+

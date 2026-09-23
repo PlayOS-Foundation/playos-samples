@@ -101,6 +101,7 @@ typedef struct {
     float        stat_timer;      /* seconds since the last STATS line */
     int          hitches;         /* frames over HITCH_MS this second */
     int          hitches_total;
+    int          long_stalls;     /* frames over 200 ms this second */
 } Game;
 
 static Game g;
@@ -663,14 +664,11 @@ int main(void)
     while (g.running && !WindowShouldClose()) {
         handle_lifecycle();
 
-        if (g.paused) {
-            WaitTime(0.05);
-            continue;
-        }
-
-        float dt = GetFrameTime();
-        if (dt > 0.05f)
-            dt = 0.05f;                     /* clamp after a suspend/stall */
+        /* GetFrameTime() is the whole frame period (update + draw + the
+         * SetTargetFPS wait), so a spike here means something blocked the
+         * frame — keep the raw value for reporting and clamp only for physics. */
+        float raw_dt = GetFrameTime();
+        float dt = raw_dt > 0.05f ? 0.05f : raw_dt;
 
         Input in = read_input();
 
@@ -679,11 +677,19 @@ int main(void)
             apply_fps_mode();
         }
 
-        if (g.state == ST_OVER) {
-            if (in.start)
-                new_game();
-        } else {
-            update_play(dt, in);
+        /* Backgrounded: skip the simulation but STILL fall through to draw and
+         * EndDrawing(). EndDrawing() is what pumps Wayland events
+         * (PollInputEvents) and commits a buffer; skipping it leaves the
+         * compositor's requests unread, so it kills the client ~1.5 s later
+         * ("async: game crashed") and the overlay/exit flow never completes.
+         * A backgrounded game must keep servicing its Wayland connection. */
+        if (!g.paused) {
+            if (g.state == ST_OVER) {
+                if (in.start)
+                    new_game();
+            } else {
+                update_play(dt, in);
+            }
         }
 
         /* Scale the virtual playfield to the real display. */
@@ -704,20 +710,25 @@ int main(void)
         g.frames++;
 
         /* 1 Hz pacing stats: tells us whether a hitch is in this loop or in
-         * presentation. Logged only when something is actually wrong. */
+         * presentation. Logged only when something is actually wrong. The value
+         * reported is the raw (unclamped) frame period, in whole milliseconds. */
         g.stat_timer += dt;
-        if (dt > g.worst_dt)
-            g.worst_dt = dt;
-        if (dt * 1000.0f >= HITCH_MS)
+        if (raw_dt > g.worst_dt)
+            g.worst_dt = raw_dt;
+        if (raw_dt * 1000.0f >= HITCH_MS)
             g.hitches++;
+        if (raw_dt > 0.2f)
+            g.long_stalls++;
         if (g.stat_timer >= 1.0f) {
             if (g.hitches > 0)
                 PLAYOS_LOG_W("pacing",
-                             "cap %d: %d hitch(es)/s, worst %.0f ms, fps %d (total %d)",
+                             "cap %d: %d hitch(es)/s, worst %.0f ms, >200ms=%d, fps %d (total %d)",
                              FPS_MODES[g.fps_mode], g.hitches,
-                             (double)(g.worst_dt * 1000.0f), GetFPS(), g.hitches_total);
+                             (double)(g.worst_dt * 1000.0f), g.long_stalls,
+                             GetFPS(), g.hitches_total);
             g.hitches_total += g.hitches;
             g.hitches = 0;
+            g.long_stalls = 0;
             g.worst_dt = 0.0f;
             g.stat_timer = 0.0f;
         }
