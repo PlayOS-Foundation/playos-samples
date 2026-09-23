@@ -27,9 +27,29 @@ the high score persists across runs.
 | storage | `playos_storage_get_saves_path`, `playos_storage_atomic_write` | `highscore.txt`, written atomically |
 | logging | `playos_log` | Boot, life lost, game over, save path |
 | raylib | `InitWindow`, `Camera2D` scale-to-display, `DrawRectangle`, `MeasureText`, `GetFrameTime` … | Rendering, fixed 1280×720 virtual playfield |
+| raylib audio | `InitAudioDevice`, `LoadSoundFromWave`, `PlaySound`, `SetMasterVolume` | Procedural SFX — no asset files |
 
-Everything lives in one state struct; there is no allocation after startup and
-nothing touches compositor internals or the control socket.
+Everything lives in one state struct; there is no allocation after startup (the
+SFX buffers are built and released during startup) and nothing touches compositor
+internals or the control socket.
+
+## Sound
+
+Four effects are **synthesised in memory at startup** — no asset files, matching
+the sample's no-assets style. Each is a short 16-bit mono buffer handed to
+raylib's `LoadSoundFromWave()` (which converts and copies it, so the source
+buffer is freed immediately via `UnloadWave()`):
+
+| Effect | Synthesis |
+|---|---|
+| fire | square wave, 900 → 260 Hz over 100 ms, linear decay |
+| invader hit | noise burst, 180 ms, squared decay |
+| player lost | sine, 380 → 70 Hz over 550 ms |
+| fleet cleared | ascending C5–E5–G5 square arpeggio |
+
+If no audio device is available the game logs `no audio device — running silent`
+and plays nothing. While backgrounded it mutes and stops its effects, since the
+audio device has one owner at a time (ADR-0007).
 
 ## Build and run
 

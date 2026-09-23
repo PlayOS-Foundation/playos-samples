@@ -92,6 +92,9 @@ typedef struct {
     uint32_t     prev_buttons;    /* for edge detection */
     char         saves_path[512];
     char         last_event[32];
+    /* Procedural sound (silent if no audio device is available) */
+    Sound        sfx_shoot, sfx_hit, sfx_death, sfx_level;
+    int          audio_ok;
 } Game;
 
 static Game g;
@@ -123,6 +126,93 @@ static float rng_f(void)
 static int rng_range(int n)
 {
     return n > 0 ? (int)(rng_next() % (uint32_t)n) : 0;
+}
+
+/* ── Sound: synthesised in memory, no asset files ─────────────────────────
+ * Each effect is a short 16-bit mono buffer built at startup and handed to
+ * raylib's LoadSoundFromWave(), which converts and copies it into its own
+ * mixing buffer — so the source buffer is freed immediately afterwards via
+ * UnloadWave(). If no audio device is available the game runs silently. */
+#define SFX_RATE 22050
+#define SFX_TAU  6.28318530718f
+
+typedef enum { W_SINE = 0, W_SQUARE = 1 } WaveShape;
+
+static Sound sfx_from_buffer(short *buf, int frames)
+{
+    Wave w = { (unsigned int)frames, (unsigned int)SFX_RATE, 16, 1, buf };
+    Sound snd = LoadSoundFromWave(w);
+    UnloadWave(w);                        /* frees buf — the Sound owns a copy */
+    return snd;
+}
+
+/* Tone sweeping f0 → f1 with a linear decay. */
+static Sound sfx_sweep(WaveShape shape, float f0, float f1, float dur, float vol)
+{
+    int frames = (int)(dur * (float)SFX_RATE);
+    if (frames < 1) frames = 1;
+
+    short *buf = malloc(sizeof(short) * (size_t)frames);
+    if (!buf) return (Sound){ 0 };
+
+    float phase = 0.0f;
+    for (int i = 0; i < frames; i++) {
+        float t = (float)i / (float)frames;
+        float f = f0 + (f1 - f0) * t;
+        phase += SFX_TAU * f / (float)SFX_RATE;
+        if (phase > SFX_TAU) phase -= SFX_TAU;
+        float s = (shape == W_SQUARE) ? (sinf(phase) >= 0.0f ? 1.0f : -1.0f)
+                                      : sinf(phase);
+        buf[i] = (short)(s * (1.0f - t) * vol * 32767.0f);
+    }
+    return sfx_from_buffer(buf, frames);
+}
+
+/* Noise burst with a squared decay. */
+static Sound sfx_noise(float dur, float vol)
+{
+    int frames = (int)(dur * (float)SFX_RATE);
+    if (frames < 1) frames = 1;
+
+    short *buf = malloc(sizeof(short) * (size_t)frames);
+    if (!buf) return (Sound){ 0 };
+
+    for (int i = 0; i < frames; i++) {
+        float t = (float)i / (float)frames;
+        float env = (1.0f - t) * (1.0f - t);
+        float n = (float)(rng_next() >> 8) / 8388608.0f - 1.0f;   /* [-1, 1) */
+        buf[i] = (short)(n * env * vol * 32767.0f);
+    }
+    return sfx_from_buffer(buf, frames);
+}
+
+/* Ascending square-wave arpeggio. */
+static Sound sfx_arp(const float *freqs, int n, float note_dur, float vol)
+{
+    int per = (int)(note_dur * (float)SFX_RATE);
+    if (per < 1) per = 1;
+    int frames = per * n;
+
+    short *buf = malloc(sizeof(short) * (size_t)frames);
+    if (!buf) return (Sound){ 0 };
+
+    for (int k = 0; k < n; k++) {
+        float phase = 0.0f;
+        for (int i = 0; i < per; i++) {
+            float t = (float)i / (float)per;
+            phase += SFX_TAU * freqs[k] / (float)SFX_RATE;
+            if (phase > SFX_TAU) phase -= SFX_TAU;
+            float s = (sinf(phase) >= 0.0f ? 1.0f : -1.0f);
+            buf[k * per + i] = (short)(s * (1.0f - t) * vol * 32767.0f);
+        }
+    }
+    return sfx_from_buffer(buf, frames);
+}
+
+static void sfx_play(const Sound *snd)
+{
+    if (g.audio_ok && snd->frameCount > 0)
+        PlaySound(*snd);
 }
 
 /* ── Geometry helper ────────────────────────────────────────────────────── */
@@ -176,6 +266,22 @@ static const char *event_name(PlayOSLifecycleEvent e)
     return "UNKNOWN";
 }
 
+/* The audio device has one owner at a time (ADR-0007), so a backgrounded game
+ * mutes and stops its effects rather than playing under the overlay/shell. */
+static void mute_audio(int mute)
+{
+    if (!g.audio_ok)
+        return;
+
+    SetMasterVolume(mute ? 0.0f : 1.0f);
+    if (mute) {
+        StopSound(g.sfx_shoot);
+        StopSound(g.sfx_hit);
+        StopSound(g.sfx_death);
+        StopSound(g.sfx_level);
+    }
+}
+
 static void handle_lifecycle(void)
 {
     PlayOSLifecycleEvent ev;
@@ -184,10 +290,10 @@ static void handle_lifecycle(void)
         snprintf(g.last_event, sizeof(g.last_event), "%s", event_name(ev));
         PLAYOS_LOG_I("lifecycle", "event: %s", event_name(ev));
         switch (ev) {
-        case PLAYOS_LIFECYCLE_FOREGROUND: g.paused = 0; break;
-        case PLAYOS_LIFECYCLE_BACKGROUND: g.paused = 1; break;
-        case PLAYOS_LIFECYCLE_SUSPEND:    save_highscore(); g.paused = 1; break;
-        case PLAYOS_LIFECYCLE_RESUME:     g.paused = 0; break;
+        case PLAYOS_LIFECYCLE_FOREGROUND: g.paused = 0; mute_audio(0); break;
+        case PLAYOS_LIFECYCLE_BACKGROUND: g.paused = 1; mute_audio(1); break;
+        case PLAYOS_LIFECYCLE_SUSPEND:    save_highscore(); g.paused = 1; mute_audio(1); break;
+        case PLAYOS_LIFECYCLE_RESUME:     g.paused = 0; mute_audio(0); break;
         case PLAYOS_LIFECYCLE_TERMINATE:  save_highscore(); g.running = 0; break;
         }
     }
@@ -276,6 +382,7 @@ static void next_level(void)
     memset(g.shot, 0, sizeof(g.shot));
     memset(g.bomb, 0, sizeof(g.bomb));
     fleet_reset();
+    sfx_play(&g.sfx_level);
 }
 
 /* ── Firing ─────────────────────────────────────────────────────────────── */
@@ -287,6 +394,7 @@ static void player_fire(void)
             g.shot[i].x = g.x + PLAYER_W * 0.5f - 2.0f;
             g.shot[i].y = PLAYER_Y - 12.0f;
             g.shot[i].vy = -SHOT_SPEED;
+            sfx_play(&g.sfx_shoot);
             return;
         }
     }
@@ -351,6 +459,7 @@ static void player_hit(void)
     g.hit_cd = 1.6f;
     g.flash = 0.25f;
     memset(g.bomb, 0, sizeof(g.bomb));
+    sfx_play(&g.sfx_death);
     PLAYOS_LOG_I("game", "life lost — %d left", g.lives);
     if (g.lives <= 0) {
         g.state = ST_OVER;
@@ -429,6 +538,7 @@ static void update_play(float dt, Input in)
                     g.fleet.alive[r][c] = 0;
                     g.fleet.count--;
                     g.score += INV_POINTS[type];
+                    sfx_play(&g.sfx_hit);
                     p->active = 0;
                     break;
                 }
@@ -607,6 +717,21 @@ int main(void)
     InitWindow((int)VW, (int)VH, "Invaders");
     SetTargetFPS(60);
 
+    /* Procedural sound: build each effect in memory (no asset files). The game
+     * simply runs silent if the audio device is unavailable. */
+    InitAudioDevice();
+    g.audio_ok = IsAudioDeviceReady();
+    if (g.audio_ok) {
+        static const float level_arp[] = { 523.25f, 659.25f, 783.99f };  /* C5 E5 G5 */
+        g.sfx_shoot = sfx_sweep(W_SQUARE, 900.0f, 260.0f, 0.10f, 0.18f);
+        g.sfx_hit   = sfx_noise(0.18f, 0.22f);
+        g.sfx_death = sfx_sweep(W_SINE,   380.0f,  70.0f, 0.55f, 0.28f);
+        g.sfx_level = sfx_arp(level_arp, 3, 0.11f, 0.20f);
+        PLAYOS_LOG_I("audio", "procedural SFX ready");
+    } else {
+        PLAYOS_LOG_W("audio", "no audio device — running silent");
+    }
+
     new_game();
 
     while (g.running && !WindowShouldClose()) {
@@ -656,6 +781,15 @@ int main(void)
         save_highscore();
     }
     save_highscore();
+
+    if (g.audio_ok) {
+        UnloadSound(g.sfx_shoot);
+        UnloadSound(g.sfx_hit);
+        UnloadSound(g.sfx_death);
+        UnloadSound(g.sfx_level);
+        CloseAudioDevice();
+    }
+
     CloseWindow();
     PLAYOS_LOG_I("exit", "invaders exiting after %ld frames", g.frames);
     return 0;
