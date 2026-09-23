@@ -1,0 +1,13 @@
+{
+  "id": "com.playos.sample-invaders",
+  "name": "Invaders",
+  "version": "1.0.0",
+  "executable": "bin/game",
+  "api_version": 1,
+  "graphics": "gles3",
+  "architecture": "x86_64",
+  "controllers": true,
+  "network": false,
+  "description": "A complete single-screen arcade shooter: five rows of invaders march and descend, you move and fire, they drop bombs, shields erode, and each level speeds up as the fleet thins. Built with libplayos + raylib; persists a high score. Left stick/D-pad moves, A fires, Start restarts.",
+  "icon": "assets/icon.png"
+}
