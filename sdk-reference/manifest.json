@@ -1,0 +1,12 @@
+{
+  "id": "com.playos.sdk-reference",
+  "name": "SDK Reference",
+  "version": "1.0.0",
+  "executable": "bin/game",
+  "api_version": 1,
+  "graphics": "gles3",
+  "architecture": "x86_64",
+  "controllers": true,
+  "network": false,
+  "description": "Minimal reference game built entirely with the PlayOS SDK. Exercises the public libplayos API (system, lifecycle, input, storage, logging) while rendering an animated raylib scene; the same source builds for the device, desktop and emulator profiles."
+}
