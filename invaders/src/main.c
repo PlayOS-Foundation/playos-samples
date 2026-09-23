@@ -92,16 +92,6 @@ typedef struct {
     uint32_t     prev_buttons;    /* for edge detection */
     char         saves_path[512];
     char         last_event[32];
-    /* Frame-pacing diagnostics. The PlayOS raylib backend renders unthrottled
-     * (eglSwapInterval(0), no wl_surface_frame), so pacing is raylib's
-     * sleep-based SetTargetFPS. These let a player A/B the cap on-device and
-     * see whether a hitch is in the game loop or in presentation. */
-    int          fps_mode;        /* index into FPS_MODES */
-    float        worst_dt;        /* worst frame time this second (s) */
-    float        stat_timer;      /* seconds since the last STATS line */
-    int          hitches;         /* frames over HITCH_MS this second */
-    int          hitches_total;
-    int          long_stalls;     /* frames over 200 ms this second */
 } Game;
 
 static Game g;
@@ -113,13 +103,6 @@ static const unsigned char INV_SPRITE[3][SPRITE] = {
     { 0x18, 0x3C, 0x7E, 0xDB, 0xFF, 0x7E, 0x24, 0x42 },
 };
 static const int INV_POINTS[3] = { 30, 20, 10 };
-
-/* Pacing caps the player can cycle with SELECT / F1 (0 = uncapped). 0 is a
- * diagnostic: with eglSwapInterval(0) the client is then throttled only by the
- * compositor releasing buffers, which is a different pacing source to 60. */
-static const int FPS_MODES[] = { 60, 120, 0, 30 };
-#define FPS_MODE_COUNT ((int)(sizeof(FPS_MODES) / sizeof(FPS_MODES[0])))
-#define HITCH_MS 40.0f
 
 /* ── Tiny RNG (no libc rand, no allocation) ─────────────────────────────── */
 static uint32_t s_rng = 0x1a2b3c4du;
@@ -211,11 +194,11 @@ static void handle_lifecycle(void)
 }
 
 /* ── Input: libplayos controller first, keyboard for desktop/dev ────────── */
-typedef struct { int left, right, fire, start, select; } Input;
+typedef struct { int left, right, fire, start; } Input;
 
 static Input read_input(void)
 {
-    Input in = { 0, 0, 0, 0, 0 };
+    Input in = { 0, 0, 0, 0 };
     PlayOSControllerState cs;
 
     if (playos_input_controller_connected() &&
@@ -227,7 +210,6 @@ static Input read_input(void)
         in.right  = (ax >  0.35f) || (b & PLAYOS_BUTTON_DPAD_RIGHT);
         in.fire   = (b & PLAYOS_BUTTON_SOUTH) && !(g.prev_buttons & PLAYOS_BUTTON_SOUTH);
         in.start  = (b & PLAYOS_BUTTON_START) && !(g.prev_buttons & PLAYOS_BUTTON_START);
-        in.select = (b & PLAYOS_BUTTON_SELECT) && !(g.prev_buttons & PLAYOS_BUTTON_SELECT);
         g.prev_buttons = b;
     } else {
         g.prev_buttons = 0;
@@ -238,19 +220,8 @@ static Input read_input(void)
     in.right  |= IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D);
     in.fire   |= IsKeyPressed(KEY_SPACE);
     in.start  |= IsKeyPressed(KEY_ENTER);
-    in.select |= IsKeyPressed(KEY_F1);
 
     return in;
-}
-
-/* ── Frame pacing (diagnostic knob) ─────────────────────────────────────── */
-static void apply_fps_mode(void)
-{
-    int fps = FPS_MODES[g.fps_mode];
-    SetTargetFPS(fps);
-    PLAYOS_LOG_I("pacing", "target fps = %d (mode %d/%d)%s", fps,
-                 g.fps_mode + 1, FPS_MODE_COUNT,
-                 fps == 0 ? " [uncapped: paced only by buffer release]" : "");
 }
 
 /* ── Game setup ─────────────────────────────────────────────────────────── */
@@ -596,18 +567,6 @@ static void draw_world(void)
     for (int i = 0; i < g.lives; i++)
         DrawRectangle((int)VW - 170 + i * 40, 56, 28, 12, (Color){ 120, 240, 255, 255 });
 
-    /* Pacing readout: F1 / SELECT cycles the cap. If this shows a steady 60
-     * while the picture still hitches, the stall is in presentation, not here. */
-    int cap = FPS_MODES[g.fps_mode];
-    char cap_txt[8];
-    if (cap)
-        snprintf(cap_txt, sizeof(cap_txt), "%d", cap);
-    else
-        snprintf(cap_txt, sizeof(cap_txt), "off");
-    DrawText(TextFormat("FPS %d  cap %s  worst %.0fms", GetFPS(), cap_txt,
-                        (double)(g.worst_dt * 1000.0f)),
-             24, (int)VH - 34, 22, (Color){ 150, 255, 190, 255 });
-
     if (g.state == ST_OVER) {
         DrawRectangle(0, 250, (int)VW, 220, (Color){ 0, 0, 0, 170 });
         const char *t = "GAME OVER";
@@ -646,36 +605,18 @@ int main(void)
     }
 
     InitWindow((int)VW, (int)VH, "Invaders");
-
-    /* Pacing: the PlayOS raylib backend renders unthrottled, so this cap is the
-     * only limiter. PLAYOS_GAME_FPS overrides the default (0 = uncapped). */
-    g.fps_mode = 0;
-    const char *fps_env = getenv("PLAYOS_GAME_FPS");
-    if (fps_env) {
-        int want = atoi(fps_env);
-        for (int i = 0; i < FPS_MODE_COUNT; i++)
-            if (FPS_MODES[i] == want)
-                g.fps_mode = i;
-    }
-    apply_fps_mode();
+    SetTargetFPS(60);
 
     new_game();
 
     while (g.running && !WindowShouldClose()) {
         handle_lifecycle();
 
-        /* GetFrameTime() is the whole frame period (update + draw + the
-         * SetTargetFPS wait), so a spike here means something blocked the
-         * frame — keep the raw value for reporting and clamp only for physics. */
-        float raw_dt = GetFrameTime();
-        float dt = raw_dt > 0.05f ? 0.05f : raw_dt;
+        float dt = GetFrameTime();
+        if (dt > 0.05f)
+            dt = 0.05f;                     /* clamp after a suspend/stall */
 
         Input in = read_input();
-
-        if (in.select) {
-            g.fps_mode = (g.fps_mode + 1) % FPS_MODE_COUNT;
-            apply_fps_mode();
-        }
 
         /* Backgrounded: skip the simulation but STILL fall through to draw and
          * EndDrawing(). EndDrawing() is what pumps Wayland events
@@ -708,30 +649,6 @@ int main(void)
         EndDrawing();
 
         g.frames++;
-
-        /* 1 Hz pacing stats: tells us whether a hitch is in this loop or in
-         * presentation. Logged only when something is actually wrong. The value
-         * reported is the raw (unclamped) frame period, in whole milliseconds. */
-        g.stat_timer += dt;
-        if (raw_dt > g.worst_dt)
-            g.worst_dt = raw_dt;
-        if (raw_dt * 1000.0f >= HITCH_MS)
-            g.hitches++;
-        if (raw_dt > 0.2f)
-            g.long_stalls++;
-        if (g.stat_timer >= 1.0f) {
-            if (g.hitches > 0)
-                PLAYOS_LOG_W("pacing",
-                             "cap %d: %d hitch(es)/s, worst %.0f ms, >200ms=%d, fps %d (total %d)",
-                             FPS_MODES[g.fps_mode], g.hitches,
-                             (double)(g.worst_dt * 1000.0f), g.long_stalls,
-                             GetFPS(), g.hitches_total);
-            g.hitches_total += g.hitches;
-            g.hitches = 0;
-            g.long_stalls = 0;
-            g.worst_dt = 0.0f;
-            g.stat_timer = 0.0f;
-        }
     }
 
     if (g.score > g.highscore) {
