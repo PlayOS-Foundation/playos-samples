@@ -1,0 +1,13 @@
+{
+  "id": "com.playos.touchdemo",
+  "name": "Touch Demo",
+  "version": "1.0.0",
+  "executable": "bin/game",
+  "api_version": 1,
+  "graphics": "gles3",
+  "architecture": "x86_64",
+  "controllers": true,
+  "network": false,
+  "description": "Sprint 17 touch proof: draws a circle under every finger and logs each contact. Touch comes from libplayos (evdev), so it needs no compositor or Wayland involvement.",
+  "icon": "assets/icon.png"
+}
